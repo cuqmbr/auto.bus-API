@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{0DCB2130-10E7-4C98-AB94-5F8D68032B9F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedModels", "SharedModels\SharedModels.csproj", "{34E01155-5DA4-45DA-8F58-63AEFCC56B4B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{0DCB2130-10E7-4C98-AB94-5F8D68032B9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DCB2130-10E7-4C98-AB94-5F8D68032B9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DCB2130-10E7-4C98-AB94-5F8D68032B9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34E01155-5DA4-45DA-8F58-63AEFCC56B4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34E01155-5DA4-45DA-8F58-63AEFCC56B4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34E01155-5DA4-45DA-8F58-63AEFCC56B4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34E01155-5DA4-45DA-8F58-63AEFCC56B4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
