@@ -6,4 +6,5 @@ public class Jwt
     public string Audience { get; set; } = null!;
     public string Issuer { get; set; } = null!;
     public double ValidityInMinutes { get; set; }
+    public double RefreshTokenValidityInDays { get; set; }
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Server.Controllers;
 
 [Authorize(Roles = "Admin")]
-[Route("api/[controller]")]
+[Route("api/secured")]
 [ApiController]
 public class SecuredController : ControllerBase
 {

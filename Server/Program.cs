@@ -87,10 +87,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Data seeding
-using var scope = app.Services.CreateScope();
-var userManager = (UserManager<ApplicationUser>)scope.ServiceProvider.GetService(typeof(UserManager<ApplicationUser>))!;
-var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
-await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
+// using var scope = app.Services.CreateScope();
+// var userManager = (UserManager<ApplicationUser>)scope.ServiceProvider.GetService(typeof(UserManager<ApplicationUser>))!;
+// var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
+// await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
 
 app.MapControllers();
 

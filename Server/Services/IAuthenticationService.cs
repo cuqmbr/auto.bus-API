@@ -8,5 +8,9 @@ public interface IAuthenticationService
 {
     Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest);
     
-    Task<AuthenticationResponse> GetTokenAsync(AuthenticationRequest authRequest);
+    Task<AuthenticationResponse> AuthenticateAsync(AuthenticationRequest authRequest);
+
+    Task<AuthenticationResponse> RenewRefreshTokenAsync(string? token);
+
+    Task<bool> RevokeRefreshToken(string? token);
 }
