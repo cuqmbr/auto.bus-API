@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SharedModels.Responses;
 
 namespace Server.Controllers;
 
@@ -11,6 +12,9 @@ public class SecuredController : ControllerBase
      [HttpGet]
      public async Task<IActionResult> GetSecuredData()
      {
-          return Ok("This Secured Data is available only for Authenticated Users with Admin role.");
+          return Ok(new ResponseBase
+          {
+               Message = "This Secured Data is available only for Authenticated Users with Admin role."
+          });
      }
 }

@@ -29,7 +29,7 @@ public class AuthenticationService : IAuthenticationService
         _jwt = jwt.Value;
     }
 
-    public async Task<(bool, string)> RegisterAsync(RegistrationRequest regRequest)
+    public async Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest)
     {
         var userWithSameEmail = await _userManager.FindByEmailAsync(regRequest.Email);
         if (userWithSameEmail != null)
@@ -40,18 +40,17 @@ public class AuthenticationService : IAuthenticationService
         var user = new ApplicationUser {UserName = regRequest.Username, Email = regRequest.Email};
 
         var result = await _userManager.CreateAsync(user, regRequest.Password);
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, Authorization.DefaultRole.ToString());
-            return (true, $"User registered with email {user.Email}.");
+            return (false, $"{result.Errors?.First().Description}");
         }
-        else
-        {
-            return (false, $"{result.Errors?.First().Description}.");
-        }
+        
+        await _userManager.AddToRoleAsync(user, Authorization.DefaultRole.ToString());
+        return (true, $"User registered with email {user.Email}.");
     }
 
-    public async Task<AuthenticationResponse> AuthenticateAsync(AuthenticationRequest authRequest)
+    public async Task<(bool succeeded, AuthenticationResponse authResponse,
+        string? refreshToken)> AuthenticateAsync(AuthenticationRequest authRequest)
     {
         var authResponse = new AuthenticationResponse();
         
@@ -59,46 +58,42 @@ public class AuthenticationService : IAuthenticationService
 
         if (user == null)
         {
-            authResponse.IsAuthenticated = false;
             authResponse.Message = $"No accounts registered with {authRequest.Email}.";
-            return authResponse;
+            return (false, authResponse, null);
         }
 
         if (!await _userManager.CheckPasswordAsync(user, authRequest.Password))
         {
-            authResponse.IsAuthenticated = false;
             authResponse.Message = $"Incorrect login or password.";
-            return authResponse;
+            return (false, authResponse, null);
         }
 
-        authResponse.IsAuthenticated = true;
-        authResponse.Email = user.Email;
-        authResponse.UserName = user.UserName;
-        var roles = await _userManager.GetRolesAsync(user);
-        authResponse.Roles = roles.ToList();
         var jwtSecurityToken = await CreateJwtToken(user);
         authResponse.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
 
+        string refreshTokenString;
+        
         if (user.RefreshTokens.Any(t => t.IsActive))
         {
             var activeRefreshToken =
                 user.RefreshTokens.First(t => t.IsActive);
-            authResponse.RefreshToken = activeRefreshToken.Token;
-            authResponse.RefreshTokenExpiration = activeRefreshToken.Expires;
+            refreshTokenString = activeRefreshToken.Token;
+            authResponse.RefreshTokenExpirationDate = activeRefreshToken.Expires;
         }
         else
         {
             var refreshToken = CreateRefreshToken();
-            authResponse.RefreshToken = refreshToken.Token;
-            authResponse.RefreshTokenExpiration = refreshToken.Expires;
+            refreshTokenString = refreshToken.Token;
+            authResponse.RefreshTokenExpirationDate = refreshToken.Expires;
             user.RefreshTokens.Add(refreshToken);
             await _userManager.UpdateAsync(user);
         }
         
-        return authResponse;
+        return (true, authResponse, refreshTokenString);
     }
 
-    public async Task<AuthenticationResponse> RenewRefreshTokenAsync(string? token)
+    public async Task<(bool succeeded, AuthenticationResponse authResponse,
+            string? refreshToken)> RenewRefreshTokenAsync(string? token)
     {
         var authResponse = new AuthenticationResponse();
 
@@ -107,18 +102,16 @@ public class AuthenticationService : IAuthenticationService
 
         if (user == null)
         {
-            authResponse.IsAuthenticated = false;
             authResponse.Message = "Refresh token did not mach any user.";
-            return authResponse;
+            return (false, authResponse, null);
         }
 
         var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
 
         if (!refreshToken.IsActive)
         {
-            authResponse.IsAuthenticated = false;
             authResponse.Message = "Refresh token expired.";
-            return authResponse;
+            return (false, authResponse, null);
         }
         
         //Revoke Current Refresh Token
@@ -130,20 +123,12 @@ public class AuthenticationService : IAuthenticationService
         await _userManager.UpdateAsync(user);
         
         //Generates new jwt
-        authResponse.IsAuthenticated = true;
-        authResponse.Email = user.Email;
-        authResponse.UserName = user.UserName;
-        
-        var roles = await _userManager.GetRolesAsync(user);
-        authResponse.Roles = roles.ToList();
-        
         var jwtSecurityToken = await CreateJwtToken(user);
         authResponse.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
         
-        authResponse.RefreshToken = newRefreshToken.Token;
-        authResponse.RefreshTokenExpiration = newRefreshToken.Expires;
+        authResponse.RefreshTokenExpirationDate = newRefreshToken.Expires;
         
-        return authResponse;
+        return (true, authResponse, newRefreshToken.Token);
     }
 
     public async Task<bool> RevokeRefreshToken(string? token)
@@ -183,10 +168,10 @@ public class AuthenticationService : IAuthenticationService
         
         var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("uid", user.Id)
+                new Claim("uid", user.Id),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email)
             }
             .Union(userClaims)
             .Union(roleClaims);

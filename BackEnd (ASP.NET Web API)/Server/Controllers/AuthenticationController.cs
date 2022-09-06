@@ -1,9 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Server.Services;
 using Server.Settings;
 using SharedModels.Requests;
+using SharedModels.Responses;
 
 namespace Server.Controllers;
 
@@ -21,29 +21,31 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest model)
+    public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest registerRequest)
     {
-        var result = await _authService.RegisterAsync(model);
+        var (succeeded, message) =
+            await _authService.RegisterAsync(registerRequest);
 
-        if (!result.succeeded)
+        if (!succeeded)
         {
-            return BadRequest(result.message);
+            return BadRequest(new ResponseBase {Message = message});
         }
         
-        return Ok(result);
+        return Ok(new ResponseBase{ Message = message });
     }
 
     [HttpPost("authenticate")]
     public async Task<IActionResult> GetTokenAsync(AuthenticationRequest authRequest)
     {
-        var authResponse = await _authService.AuthenticateAsync(authRequest);
+        var (succeeded, authResponse, refreshToken) =
+            await _authService.AuthenticateAsync(authRequest);
 
-        if (!authResponse.IsAuthenticated)
+        if (!succeeded)
         {
             return BadRequest(authResponse);
         }
 
-        SetRefreshTokenInCookie(authResponse.RefreshToken);
+        SetRefreshTokenInCookie(refreshToken!);
         
         return Ok(authResponse);
     }
@@ -53,16 +55,17 @@ public class AuthenticationController : ControllerBase
     {
         var refreshToken = Request.Cookies["refreshToken"];
 
-        var authResponse = await _authService.RenewRefreshTokenAsync(refreshToken);
+        var (succeeded, authResponse, newRefreshToken) =
+            await _authService.RenewRefreshTokenAsync(refreshToken);
 
-        if (!authResponse.IsAuthenticated)
+        if (!succeeded)
         {
             return BadRequest(authResponse);
         }
         
-        if (!String.IsNullOrEmpty(authResponse.RefreshToken))
+        if (!String.IsNullOrEmpty(newRefreshToken))
         {
-            SetRefreshTokenInCookie(authResponse.RefreshToken);
+            SetRefreshTokenInCookie(newRefreshToken);
         }
 
         return Ok(authResponse);
@@ -72,19 +75,19 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> RevokeToken([FromBody] RevokeRefreshTokenRequest revokeRequest)
     {
         // accept token from request body or cookie
-        var token = revokeRequest?.Token ?? Request.Cookies["refreshToken"];
+        var token = revokeRequest.Token ?? Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(token))
         {
-            return BadRequest(new { message = "Refresh token is required." });
+            return BadRequest(new ResponseBase{ Message = "Refresh token is required." });
         }
         
         var response = await _authService.RevokeRefreshToken(token);
         if (!response)
         {
-            return NotFound(new { message = "Refresh token not found." });
+            return NotFound(new ResponseBase{ Message = "Refresh token not found." });
         }
         
-        return Ok(new { message = "Refresh token revoked." });
+        return Ok(new ResponseBase{ Message = "Refresh token revoked." });
     }
     
     private void SetRefreshTokenInCookie(string refreshToken)
