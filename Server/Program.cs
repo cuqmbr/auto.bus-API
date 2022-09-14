@@ -41,6 +41,14 @@ builder.Services.AddSwaggerGen(options => {
     });
 });
 
+var corsPolicyName = "defaultCorsPolicy";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(corsPolicyName,
+        policy => policy.WithOrigins("http://localhost:4200").AllowCredentials()
+            .AllowAnyHeader().AllowAnyMethod());
+});
+
 //Configuration from AppSettings
 builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
 //User Manager Service
@@ -93,6 +101,8 @@ app.UseHttpsRedirection();
 // await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
 
 app.MapControllers();
+
+app.UseCors(corsPolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -75,7 +75,7 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> RevokeToken([FromBody] RevokeRefreshTokenRequest revokeRequest)
     {
         // accept token from request body or cookie
-        var token = revokeRequest.Token ?? Request.Cookies["refreshToken"];
+        var token = revokeRequest.RefreshToken ?? Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(token))
         {
             return BadRequest(new ResponseBase{ Message = "Refresh token is required." });
