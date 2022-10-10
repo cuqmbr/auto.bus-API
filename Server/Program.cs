@@ -4,16 +4,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
+using Server.Configurations;
 using Server.Data;
 using Server.Models;
 using Server.Services;
-using Server.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+    options.SerializerSettings.Formatting = Formatting.Indented);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -42,19 +44,18 @@ builder.Services.AddSwaggerGen(options => {
 });
 
 var corsPolicyName = "defaultCorsPolicy";
-builder.Services.AddCors(options =>
-{
+builder.Services.AddCors(options => {
     options.AddPolicy(corsPolicyName,
         policy => policy.WithOrigins("http://localhost:4200").AllowCredentials()
             .AllowAnyHeader().AllowAnyMethod());
 });
 
-//Configuration from AppSettings
+// Configuration from AppSettings
 builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
-//User Manager Service
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+// User Manager Service
+builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-//Adding Authentication - JWT
+// Adding Authentication - JWT
 builder.Services.AddAuthentication(options => {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,7 +79,12 @@ builder.Services.AddAuthentication(options => {
     });
 builder.Services.AddAuthorization();
 
-//Adding DB Context with PostgreSQL
+builder.Services.AddAutoMapper(typeof(MapperInitializer));
+
+builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
+builder.Services.AddScoped<IDateTimeService, DateTimeService>();
+
+// Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -96,7 +102,7 @@ app.UseHttpsRedirection();
 
 // Data seeding
 // using var scope = app.Services.CreateScope();
-// var userManager = (UserManager<ApplicationUser>)scope.ServiceProvider.GetService(typeof(UserManager<ApplicationUser>))!;
+// var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
 // var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
 // await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
 

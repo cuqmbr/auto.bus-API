@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Server.Configurations;
 using Server.Services;
-using Server.Settings;
 using SharedModels.Requests;
 using SharedModels.Responses;
 

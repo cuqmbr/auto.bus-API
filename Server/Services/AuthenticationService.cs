@@ -6,10 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Server.Configurations;
 using Server.Constants;
-using Server.Entities;
 using Server.Models;
-using Server.Settings;
 using SharedModels.Requests;
 using SharedModels.Responses;
 
@@ -17,11 +16,11 @@ namespace Server.Services;
 
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly Jwt _jwt;
     
-    public AuthenticationService(UserManager<ApplicationUser> userManager,
+    public AuthenticationService(UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager, IOptions<Jwt> jwt)
     {
         _userManager = userManager;
@@ -37,7 +36,7 @@ public class AuthenticationService : IAuthenticationService
             return (false, $"Email {regRequest.Email} is already registered.");
         }
 
-        var user = new ApplicationUser {UserName = regRequest.Username, Email = regRequest.Email};
+        var user = new User {UserName = regRequest.Username, Email = regRequest.Email};
 
         var result = await _userManager.CreateAsync(user, regRequest.Password);
         if (!result.Succeeded)
@@ -154,7 +153,7 @@ public class AuthenticationService : IAuthenticationService
         return true;
     }
     
-    private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
+    private async Task<JwtSecurityToken> CreateJwtToken(User user)
     {
         var userClaims = await _userManager.GetClaimsAsync(user);
         var roles = await _userManager.GetRolesAsync(user);

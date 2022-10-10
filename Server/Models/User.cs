@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Identity;
-using Server.Entities;
 
 namespace Server.Models;
 
-public class ApplicationUser : IdentityUser
+public class User : IdentityUser
 {
     public string? FirstName { get; set; }
     public string? LastName { get; set; }

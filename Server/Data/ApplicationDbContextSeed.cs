@@ -6,7 +6,7 @@ namespace Server.Data;
 
 public class ApplicationDbContextSeed
 {
-    public static async Task SeedEssentialsAsync(UserManager<ApplicationUser> userManager,
+    public static async Task SeedEssentialsAsync(UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager)
     {
         //Seed Roles
@@ -14,7 +14,7 @@ public class ApplicationDbContextSeed
         await roleManager.CreateAsync(new IdentityRole(Authorization.Roles.User.ToString()));
         
         //Seed Default User
-        var defaultUser = new ApplicationUser
+        var defaultUser = new User
         {
             UserName = Authorization.DefaultUsername,
             Email = Authorization.DefaultEmail,
