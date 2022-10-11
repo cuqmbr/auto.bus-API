@@ -4,6 +4,5 @@ namespace SharedModels.Responses;
 
 public class ResponseBase
 {
-    [JsonInclude]
-    public string? Message;
+    public string? Message { get; set; }
 }

@@ -2,8 +2,10 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
+using SharedModels.QueryStringParameters;
 
 namespace Server.Services;
 
@@ -29,9 +31,12 @@ public class CountryManagementService : ICountryManagementService
         return (true, String.Empty, _mapper.Map<CountryDto>(country));
     }
     
-    public async Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries)> GetCountries()
+    public async Task<(bool isSucceed, string message, PagedList<Country> countries)> GetCountries(CountryParameters parameters)
     {
-        throw new NotImplementedException();
+        var dbCountries = PagedList<Country>.ToPagedList(_dbContext.Countries,
+            parameters.PageNumber, parameters.PageSize);
+
+        return (true, "", dbCountries);
     }
     
     public async Task<(bool isSucceed, string message, CountryDto country)> GetCountry(int id)

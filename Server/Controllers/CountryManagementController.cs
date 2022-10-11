@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Server.Data;
+using Newtonsoft.Json;
 using Server.Services;
 using SharedModels.DataTransferObjects;
+using SharedModels.QueryStringParameters;
 
 namespace Server.Controllers;
 
@@ -30,15 +31,27 @@ public class CountryManagementController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCountries()
+    public async Task<IActionResult> GetCountries([FromQuery] CountryParameters parameters)
     {
-        var result = await _countryManagementService.GetCountries();
+        var result = await _countryManagementService.GetCountries(parameters);
 
         if (!result.isSucceed)
         {
             return BadRequest(result.message);
         }
+        
+        var metadata = new
+        {
+            result.countries.TotalCount,
+            result.countries.PageSize,
+            result.countries.CurrentPage,
+            result.countries.TotalPages,
+            result.countries.HasNext,
+            result.countries.HasPrevious
+        };
 
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
+        
         return Ok(result.countries);
     }
     
