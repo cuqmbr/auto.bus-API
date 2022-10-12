@@ -30,20 +30,74 @@ public class CountryManagementService : ICountryManagementService
         return (true, String.Empty, _mapper.Map<CountryDto>(country));
     }
 
-    public async
-        Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries,
+    public async Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries,
             PagingMetadata<Country> pagingMetadata)> GetCountries(CountryParameters parameters)
     {
-        var dbCountries = await _dbContext.Countries
-            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-            .Take(parameters.PageSize)
-            .ToListAsync();
+        var dbCountries = _dbContext.Countries.AsQueryable();
+        
+        SearchByAllCountryFields(ref dbCountries, parameters.Search);
+        SearchByCountryCode(ref dbCountries, parameters.CountryCode);
+        SearchByCountryName(ref dbCountries, parameters.CountryName);
 
-        var pagingMetadata = new PagingMetadata<Country>(_dbContext.Countries,
-            parameters.PageNumber, parameters.PageSize);
+        var pagingMetadata = ApplyPaging(ref dbCountries, parameters.PageNumber,
+            parameters.PageSize);
 
-        return (true, "", dbCountries.ConvertAll(c => _mapper.Map<CountryDto>(c)),
-            pagingMetadata);
+        var countryDtos = dbCountries.ToList()
+            .ConvertAll(c => _mapper.Map<CountryDto>(c));
+        
+        return (true, "", countryDtos, pagingMetadata);
+
+        void SearchByAllCountryFields(ref IQueryable<Country> countries,
+            string? search)
+        {
+            if (!countries.Any() || String.IsNullOrWhiteSpace(search))
+            {
+                return;
+            }
+            
+            var s = search.Trim().ToLower();
+
+            countries = countries.Where(c =>
+                c.Code.ToLower().Contains(search) ||
+                c.Name.ToLower().Contains(search));
+        }
+        
+        void SearchByCountryCode(ref IQueryable<Country> countries,
+            string? countryCode)
+        {
+            if (!countries.Any() || String.IsNullOrWhiteSpace(countryCode))
+            {
+                return;
+            }
+
+            countries = countries.Where(c =>
+                c.Code.ToLower().Contains(countryCode.Trim().ToLower()));
+        }
+        
+        void SearchByCountryName(ref IQueryable<Country> countries,
+            string? countryName)
+        {
+            if (!countries.Any() || String.IsNullOrWhiteSpace(countryName))
+            {
+                return;
+            }
+
+            countries = countries.Where(c =>
+                c.Name.ToLower().Contains(countryName.Trim().ToLower()));
+        }
+
+        PagingMetadata<Country> ApplyPaging(ref IQueryable<Country> countries,
+            int pageNumber, int pageSize)
+        {
+            var metadata = new PagingMetadata<Country>(countries,
+                parameters.PageNumber, parameters.PageSize);
+            
+            countries = countries
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize);
+
+            return metadata;
+        }
     }
     
     public async Task<(bool isSucceed, string message, CountryDto country)> GetCountry(int id)
