@@ -1,7 +1,9 @@
+using System.Linq.Dynamic.Core;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryStringParameters;
@@ -12,12 +14,14 @@ public class CountryManagementService : ICountryManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly ISortHelper<Country> _countrySortHelper;
 
     public CountryManagementService(ApplicationDbContext dbContext,
-        IMapper mapper)
+        IMapper mapper, ISortHelper<Country> countrySortHelper)
     {
         _dbContext = dbContext;
         _mapper = mapper;
+        _countrySortHelper = countrySortHelper;
     }
 
     public async Task<(bool isSucceed, string message, CountryDto country)> AddCountry(CreateCountryDto createCountryDto)
@@ -36,14 +40,27 @@ public class CountryManagementService : ICountryManagementService
         var dbCountries = _dbContext.Countries.AsQueryable();
         
         SearchByAllCountryFields(ref dbCountries, parameters.Search);
-        SearchByCountryCode(ref dbCountries, parameters.CountryCode);
-        SearchByCountryName(ref dbCountries, parameters.CountryName);
+        SearchByCountryCode(ref dbCountries, parameters.Code);
+        SearchByCountryName(ref dbCountries, parameters.Name);
+
+        try
+        {
+            dbCountries = _countrySortHelper.ApplySort(dbCountries, parameters.Sort);
+            
+            // By calling Any() we will check if LINQ to Entities Query will be
+            // executed. If not it will throw an InvalidOperationException exception
+            var isExecuted = dbCountries.Any();
+        }
+        catch (Exception e)
+        {
+            return (false, "Invalid sorting string", null, null)!;
+        }
 
         var pagingMetadata = ApplyPaging(ref dbCountries, parameters.PageNumber,
             parameters.PageSize);
 
-        var countryDtos = dbCountries.ToList()
-            .ConvertAll(c => _mapper.Map<CountryDto>(c));
+        var countryDtos =
+            dbCountries.ProjectTo<CountryDto>(_mapper.ConfigurationProvider);
         
         return (true, "", countryDtos, pagingMetadata);
 

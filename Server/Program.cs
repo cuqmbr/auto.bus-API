@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Server.Configurations;
 using Server.Data;
+using Server.Helpers;
 using Server.Models;
 using Server.Services;
 
@@ -82,7 +83,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddAutoMapper(typeof(MapperInitializer));
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
+
 builder.Services.AddScoped<IDateTimeService, DateTimeService>();
+
+builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
