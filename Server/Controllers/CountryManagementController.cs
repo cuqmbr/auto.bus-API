@@ -40,17 +40,7 @@ public class CountryManagementController : ControllerBase
             return BadRequest(result.message);
         }
         
-        var metadata = new
-        {
-            result.countries.TotalCount,
-            result.countries.PageSize,
-            result.countries.CurrentPage,
-            result.countries.TotalPages,
-            result.countries.HasNext,
-            result.countries.HasPrevious
-        };
-
-        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
         
         return Ok(result.countries);
     }

@@ -2,7 +2,6 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
-using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryStringParameters;
@@ -30,13 +29,21 @@ public class CountryManagementService : ICountryManagementService
     
         return (true, String.Empty, _mapper.Map<CountryDto>(country));
     }
-    
-    public async Task<(bool isSucceed, string message, PagedList<Country> countries)> GetCountries(CountryParameters parameters)
+
+    public async
+        Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries,
+            PagingMetadata<Country> pagingMetadata)> GetCountries(CountryParameters parameters)
     {
-        var dbCountries = PagedList<Country>.ToPagedList(_dbContext.Countries,
+        var dbCountries = await _dbContext.Countries
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .ToListAsync();
+
+        var pagingMetadata = new PagingMetadata<Country>(_dbContext.Countries,
             parameters.PageNumber, parameters.PageSize);
 
-        return (true, "", dbCountries);
+        return (true, "", dbCountries.ConvertAll(c => _mapper.Map<CountryDto>(c)),
+            pagingMetadata);
     }
     
     public async Task<(bool isSucceed, string message, CountryDto country)> GetCountry(int id)
