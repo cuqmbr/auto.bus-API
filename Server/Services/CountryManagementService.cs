@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Linq.Dynamic.Core;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -15,13 +16,16 @@ public class CountryManagementService : ICountryManagementService
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly ISortHelper<Country> _countrySortHelper;
+    private readonly IDataShaper<Country> _countryDataShaper;
 
     public CountryManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Country> countrySortHelper)
+        IMapper mapper, ISortHelper<Country> countrySortHelper, 
+        IDataShaper<Country> countryDataShaper)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _countrySortHelper = countrySortHelper;
+        _countryDataShaper = countryDataShaper;
     }
 
     public async Task<(bool isSucceed, string message, CountryDto country)> AddCountry(CreateCountryDto createCountryDto)
@@ -34,7 +38,7 @@ public class CountryManagementService : ICountryManagementService
         return (true, String.Empty, _mapper.Map<CountryDto>(country));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries,
+    public async Task<(bool isSucceed, string message, IEnumerable<ExpandoObject> countries,
             PagingMetadata<Country> pagingMetadata)> GetCountries(CountryParameters parameters)
     {
         var dbCountries = _dbContext.Countries.AsQueryable();
@@ -59,10 +63,9 @@ public class CountryManagementService : ICountryManagementService
         var pagingMetadata = ApplyPaging(ref dbCountries, parameters.PageNumber,
             parameters.PageSize);
 
-        var countryDtos =
-            dbCountries.ProjectTo<CountryDto>(_mapper.ConfigurationProvider);
+        var shapedCountiesData = _countryDataShaper.ShapeData(dbCountries, parameters.Fields);
         
-        return (true, "", countryDtos, pagingMetadata);
+        return (true, "", shapedCountiesData, pagingMetadata);
 
         void SearchByAllCountryFields(ref IQueryable<Country> countries,
             string? search)
@@ -117,21 +120,22 @@ public class CountryManagementService : ICountryManagementService
         }
     }
     
-    public async Task<(bool isSucceed, string message, CountryDto country)> GetCountry(int id)
+    public async Task<(bool isSucceed, string message, ExpandoObject country)> GetCountry(int id, string? fields)
     {
         var dbCountry = await _dbContext.Countries.Where(c => c.Id == id)
-            .ProjectTo<CountryDto>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync();
 
         if (dbCountry == null)
         {
             return (false, $"Country doesn't exist", null)!;
         }
+        
+        var shapedCountryData = _countryDataShaper.ShapeData(dbCountry, fields);
 
-        return (true, "", dbCountry);
+        return (true, "", shapedCountryData);
     }
 
-    public async Task<(bool isSucceed, string message, CountryDto country)> UpdateCountry(UpdateCountryDto updateCountryDto)
+    public async Task<(bool isSucceed, string message, UpdateCountryDto country)> UpdateCountry(UpdateCountryDto updateCountryDto)
     {
         var country = _mapper.Map<Country>(updateCountryDto);
         _dbContext.Entry(country).State = EntityState.Modified;
@@ -152,7 +156,7 @@ public class CountryManagementService : ICountryManagementService
 
         var dbCountry = await _dbContext.Countries.FirstOrDefaultAsync(c => c.Id == country.Id);
         
-        return (true, String.Empty, _mapper.Map<CountryDto>(dbCountry));
+        return (true, String.Empty, _mapper.Map<UpdateCountryDto>(dbCountry));
     }
 
     public async Task<(bool isSucceed, string message)> DeleteCountry(int id)

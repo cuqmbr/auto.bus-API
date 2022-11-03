@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Server.Configurations;
 using Server.Data;
 using Server.Helpers;
@@ -15,8 +16,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers().AddNewtonsoftJson(options =>
-    options.SerializerSettings.Formatting = Formatting.Indented);
+builder.Services.AddControllers().AddNewtonsoftJson(options => {
+    options.SerializerSettings.Formatting = Formatting.Indented;
+    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+    
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -87,6 +91,8 @@ builder.Services.AddScoped<ICountryManagementService, CountryManagementService>(
 builder.Services.AddScoped<IDateTimeService, DateTimeService>();
 
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
+
+builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

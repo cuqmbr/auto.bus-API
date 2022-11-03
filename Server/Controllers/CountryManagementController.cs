@@ -46,14 +46,14 @@ public class CountryManagementController : ControllerBase
     }
     
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetCountry(int id)
+    public async Task<IActionResult> GetCountry(int id, [FromQuery] string? fields)
     {
         if (!await _countryManagementService.IsCountryExists(id))
         {
             return NotFound();
         }
 
-        var result = await _countryManagementService.GetCountry(id);
+        var result = await _countryManagementService.GetCountry(id, fields);
 
         if (!result.isSucceed)
         {
@@ -78,7 +78,7 @@ public class CountryManagementController : ControllerBase
             return BadRequest(result.message);
         }
     
-        return Ok(result);
+        return Ok(result.country);
     }
     
     [HttpDelete("{id}")]
