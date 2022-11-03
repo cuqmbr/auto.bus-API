@@ -12,17 +12,17 @@ public class ApplicationDbContext : IdentityDbContext<User>
     {
     }
     
-    public DbSet<Company> Companies { get; set; }
-    public DbSet<Vehicle> Vehicles { get; set; }
-    public DbSet<VehicleEnrollment> VehicleEnrollments { get; set; }
-    public DbSet<Route> Routes { get; set; }
-    public DbSet<RouteAddress> RouteAddresses { get; set; }
-    public DbSet<Address> Addresses { get; set; }
-    public DbSet<City> Cities { get; set; }
-    public DbSet<State> States { get; set; }
-    public DbSet<Country> Countries { get; set; }
-    
-    public DbSet<Ticket> Tickets { get; set; } 
+    public DbSet<Company> Companies { get; set; } = null!;
+    public DbSet<Vehicle> Vehicles { get; set; } = null!;
+    public DbSet<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;
+    public DbSet<Route> Routes { get; set; } = null!;
+    public DbSet<RouteAddress> RouteAddresses { get; set; } = null!;
+    public DbSet<Address> Addresses { get; set; } = null!;
+    public DbSet<City> Cities { get; set; } = null!;
+    public DbSet<State> States { get; set; } = null!;
+    public DbSet<Country> Countries { get; set; } = null!;
+    public DbSet<Ticket> Tickets { get; set; } = null!;
+    public DbSet<Review> Reviews { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +32,9 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasKey(ra => new {ra.RouteId, ra.AddressId});
 
         modelBuilder.Entity<Ticket>()
+            .HasKey(t => new {t.UserId, t.VehicleEnrollmentId});
+        
+        modelBuilder.Entity<Review>()
             .HasKey(t => new {t.UserId, t.VehicleEnrollmentId});
     }
 }

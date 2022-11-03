@@ -17,5 +17,10 @@ public class VehicleEnrollment
     public Route Route { get; set; } = null!;
     
     public DateOnly DepartureDateOnly { get; set; }
+    public TimeOnly DepartureTimeOnlyUtc { get; set; }
+
     public TimeSpan DelayTimeSpan { get; set; }
+    
+    public bool IsCanceled {get; set; }
+    public string CancelationComment { get; set; } = null!;
 }

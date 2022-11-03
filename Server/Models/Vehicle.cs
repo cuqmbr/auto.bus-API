@@ -15,4 +15,12 @@ public class Vehicle
     [ForeignKey("CompanyId")]
     public int CompanyId { get; set; }
     public Company Company { get; set; } = null!;
+    
+    public bool HasClimateControl { get; set; }
+    public bool HasWiFi { get; set; }
+    public bool HasWC { get; set; }
+    public bool HasStewardess { get; set; }
+    public bool HasTV { get; set; }
+    public bool HasOutlet { get; set; }
+    public bool HasBelts { get; set; }
 }
