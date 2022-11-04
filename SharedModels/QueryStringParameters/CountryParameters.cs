@@ -2,10 +2,12 @@ namespace SharedModels.QueryStringParameters;
 
 public class CountryParameters : QueryStringParameters
 {
+    public const string DefaultFields = "id,code,name";
+    
     public CountryParameters()
     {
         Sort = "id";
-        Fields = "id,code,name,states";
+        Fields = DefaultFields;
     }
     
     public string? Code { get; set; }

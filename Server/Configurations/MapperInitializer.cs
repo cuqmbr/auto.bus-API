@@ -1,3 +1,4 @@
+using System.Dynamic;
 using AutoMapper;
 using Server.Models;
 using SharedModels.DataTransferObjects;
@@ -12,9 +13,12 @@ public class MapperInitializer : Profile
         CreateMap<Country, CountryDto>().ReverseMap();
         CreateMap<Country, CreateCountryDto>().ReverseMap();
         CreateMap<Country, UpdateCountryDto>().ReverseMap();
+        CreateMap<Country, InStateCountryDto>().ReverseMap();
         
         CreateMap<State, StateDto>().ReverseMap();
         CreateMap<State, CreateStateDto>().ReverseMap();
+        CreateMap<State, UpdateStateDto>().ReverseMap();
+        CreateMap<State, InCountryStateDto>().ReverseMap();
 
         CreateMap<City, CityDto>().ReverseMap();
         CreateMap<City, CreateCityDto>().ReverseMap();

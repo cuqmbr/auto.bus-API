@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddNewtonsoftJson(options => {
     options.SerializerSettings.Formatting = Formatting.Indented;
     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-    
+    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -87,12 +87,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddAutoMapper(typeof(MapperInitializer));
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
+builder.Services.AddScoped<IStateManagementService, StateManagementService>();
 
 builder.Services.AddScoped<IDateTimeService, DateTimeService>();
 
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
+builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
 
 builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
+builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

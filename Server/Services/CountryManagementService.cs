@@ -1,7 +1,5 @@
 using System.Dynamic;
-using System.Linq.Dynamic.Core;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -38,10 +36,12 @@ public class CountryManagementService : ICountryManagementService
         return (true, String.Empty, _mapper.Map<CountryDto>(country));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<ExpandoObject> countries,
+    public async Task<(bool isSucceed, string message, IEnumerable<CountryDto> countries,
             PagingMetadata<Country> pagingMetadata)> GetCountries(CountryParameters parameters)
     {
-        var dbCountries = _dbContext.Countries.AsQueryable();
+        var dbCountries = _dbContext.Countries.Include(c => c.States)
+            .ThenInclude(s => s.Cities).ThenInclude(c => c.Addresses)
+            .AsQueryable();
         
         SearchByAllCountryFields(ref dbCountries, parameters.Search);
         SearchByCountryCode(ref dbCountries, parameters.Code);
@@ -64,8 +64,9 @@ public class CountryManagementService : ICountryManagementService
             parameters.PageSize);
 
         var shapedCountiesData = _countryDataShaper.ShapeData(dbCountries, parameters.Fields);
+        var countryDtos = shapedCountiesData.ToList().ConvertAll(d => _mapper.Map<CountryDto>(d));
         
-        return (true, "", shapedCountiesData, pagingMetadata);
+        return (true, "", countryDtos, pagingMetadata);
 
         void SearchByAllCountryFields(ref IQueryable<Country> countries,
             string? search)
@@ -74,12 +75,10 @@ public class CountryManagementService : ICountryManagementService
             {
                 return;
             }
-            
-            var s = search.Trim().ToLower();
 
             countries = countries.Where(c =>
-                c.Code.ToLower().Contains(search) ||
-                c.Name.ToLower().Contains(search));
+                c.Code.ToLower().Contains(search.ToLower()) ||
+                c.Name.ToLower().Contains(search.ToLower()));
         }
         
         void SearchByCountryCode(ref IQueryable<Country> countries,
@@ -110,29 +109,37 @@ public class CountryManagementService : ICountryManagementService
             int pageNumber, int pageSize)
         {
             var metadata = new PagingMetadata<Country>(countries,
-                parameters.PageNumber, parameters.PageSize);
+                pageNumber, pageSize);
             
             countries = countries
-                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-                .Take(parameters.PageSize);
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
 
             return metadata;
         }
     }
     
-    public async Task<(bool isSucceed, string message, ExpandoObject country)> GetCountry(int id, string? fields)
+    public async Task<(bool isSucceed, string message, CountryDto country)> GetCountry(int id, string? fields)
     {
         var dbCountry = await _dbContext.Countries.Where(c => c.Id == id)
+            .Include(c => c.States).ThenInclude(s => s.Cities)
+            .ThenInclude(c => c.Addresses)
             .FirstOrDefaultAsync();
 
         if (dbCountry == null)
         {
             return (false, $"Country doesn't exist", null)!;
         }
+
+        if (String.IsNullOrWhiteSpace(fields))
+        {
+            fields = CountryParameters.DefaultFields;
+        }
         
         var shapedCountryData = _countryDataShaper.ShapeData(dbCountry, fields);
+        var countryDto = _mapper.Map<CountryDto>(shapedCountryData);
 
-        return (true, "", shapedCountryData);
+        return (true, "", countryDto);
     }
 
     public async Task<(bool isSucceed, string message, UpdateCountryDto country)> UpdateCountry(UpdateCountryDto updateCountryDto)

@@ -6,7 +6,7 @@ public class CountryDto : CreateCountryDto
 {
     public int Id { get; set; }
     
-    public virtual IList<StateDto> States { get; set; } = null!;
+    public virtual IList<InCountryStateDto> States { get; set; } = null!;
 }
 
 public class CreateCountryDto
@@ -24,4 +24,10 @@ public class UpdateCountryDto : CreateCountryDto
 {
     [Required]
     public int Id { get; set; }
+}
+
+public class InStateCountryDto
+{
+    public string Code { get; set; } = null!;
+    public string Name { get; set; } = null!;
 }
