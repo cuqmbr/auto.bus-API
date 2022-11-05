@@ -45,7 +45,7 @@ public class StateManagementService : IStateManagementService
         
         SearchByAllStateFields(ref dbStates, parameters.Search);
         SearchByStateName(ref dbStates, parameters.Name);
-        SearchByStateCountryId(ref dbStates, parameters.CountryId);
+        SearchByCountryId(ref dbStates, parameters.CountryId);
 
         try
         {
@@ -80,7 +80,7 @@ public class StateManagementService : IStateManagementService
                 s.Name.ToLower().Contains(search.ToLower()));
         }
         
-        void SearchByStateCountryId(ref IQueryable<State> states,
+        void SearchByCountryId(ref IQueryable<State> states,
             int? countryId)
         {
             if (!states.Any() || countryId == null)
@@ -88,9 +88,7 @@ public class StateManagementService : IStateManagementService
                 return;
             }
 
-            states = states.Where(s =>
-                s.CountryId.ToString().ToLower()
-                    .Contains(countryId.ToString()!.Trim().ToLower()));
+            states = states.Where(s => s.CountryId == countryId);
         }
         
         void SearchByStateName(ref IQueryable<State> states,

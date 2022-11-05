@@ -88,14 +88,20 @@ builder.Services.AddAutoMapper(typeof(MapperInitializer));
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
 builder.Services.AddScoped<IStateManagementService, StateManagementService>();
+builder.Services.AddScoped<ICityManagementService, CityManagementService>();
+builder.Services.AddScoped<IAddressManagementService, AddressManagementService>();
 
 builder.Services.AddScoped<IDateTimeService, DateTimeService>();
 
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
 builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
+builder.Services.AddScoped<ISortHelper<City>, SortHelper<City>>();
+builder.Services.AddScoped<ISortHelper<Address>, SortHelper<Address>>();
 
 builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
 builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
+builder.Services.AddScoped<IDataShaper<City>, DataShaper<City>>();
+builder.Services.AddScoped<IDataShaper<Address>, DataShaper<Address>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

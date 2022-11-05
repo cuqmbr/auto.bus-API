@@ -6,9 +6,9 @@ public class CityDto : CreateCityDto
 {
     public int Id { get; set; }
     
-    public StateDto State { get; set; } = null!;
+    public InCityStateDto State { get; set; } = null!;
     
-    public virtual IList<AddressDto>? Addresses { get; set; }
+    public virtual IList<InCityAddressDto>? Addresses { get; set; }
 }
 
 public class CreateCityDto
@@ -19,4 +19,21 @@ public class CreateCityDto
     
     [Required]
     public int StateId { get; set; }
+}
+
+public class UpdateCityDto : CreateCityDto
+{
+    [Required]
+    public int Id { get; set; }
+}
+
+public class InStateCityDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+}
+
+public class InAddressCityDto
+{
+    public string Name { get; set; } = null!;
 }

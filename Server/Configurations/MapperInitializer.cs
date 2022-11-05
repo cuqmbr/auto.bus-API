@@ -19,12 +19,18 @@ public class MapperInitializer : Profile
         CreateMap<State, CreateStateDto>().ReverseMap();
         CreateMap<State, UpdateStateDto>().ReverseMap();
         CreateMap<State, InCountryStateDto>().ReverseMap();
+        CreateMap<State, InCityStateDto>().ReverseMap();
 
         CreateMap<City, CityDto>().ReverseMap();
         CreateMap<City, CreateCityDto>().ReverseMap();
+        CreateMap<City, UpdateCityDto>().ReverseMap();
+        CreateMap<City, InStateCityDto>().ReverseMap();
+        CreateMap<City, InAddressCityDto>().ReverseMap();
 
         CreateMap<Address, AddressDto>().ReverseMap();
         CreateMap<Address, CreateAddressDto>().ReverseMap();
+        CreateMap<Address, UpdateAddressDto>().ReverseMap();
+        CreateMap<Address, InCityAddressDto>().ReverseMap();
 
         CreateMap<RouteAddress, RouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, CreateRouteAddressDto>().ReverseMap();
