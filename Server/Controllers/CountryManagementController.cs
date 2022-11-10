@@ -64,7 +64,7 @@ public class CountryManagementController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRoute(int id, UpdateCountryDto country)
+    public async Task<IActionResult> UpdateCountry(int id, UpdateCountryDto country)
     {
         if (id != country.Id)
         {
@@ -82,7 +82,7 @@ public class CountryManagementController : ControllerBase
     }
     
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRoute(int id)
+    public async Task<IActionResult> DeleteCountry(int id)
     {
         if (!await _countryManagementService.IsCountryExists(id))
         {

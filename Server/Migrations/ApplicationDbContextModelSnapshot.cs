@@ -179,7 +179,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CityId");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.City", b =>
@@ -201,7 +201,7 @@ namespace Server.Migrations
 
                     b.HasIndex("StateId");
 
-                    b.ToTable("Cities");
+                    b.ToTable("Cities", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.Company", b =>
@@ -224,7 +224,7 @@ namespace Server.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.Country", b =>
@@ -245,7 +245,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Countries");
+                    b.ToTable("Countries", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.Review", b =>
@@ -267,7 +267,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleEnrollmentId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.Route", b =>
@@ -284,7 +284,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Routes");
+                    b.ToTable("Routes", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.RouteAddress", b =>
@@ -311,7 +311,7 @@ namespace Server.Migrations
 
                     b.HasIndex("AddressId");
 
-                    b.ToTable("RouteAddresses");
+                    b.ToTable("RouteAddresses", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.State", b =>
@@ -333,7 +333,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CountryId");
 
-                    b.ToTable("States");
+                    b.ToTable("States", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.Ticket", b =>
@@ -354,7 +354,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleEnrollmentId");
 
-                    b.ToTable("Tickets");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.User", b =>
@@ -474,7 +474,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Vehicles");
+                    b.ToTable("Vehicles", (string)null);
                 });
 
             modelBuilder.Entity("Server.Models.VehicleEnrollment", b =>
@@ -513,7 +513,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("VehicleEnrollments");
+                    b.ToTable("VehicleEnrollments", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -670,7 +670,7 @@ namespace Server.Migrations
 
             modelBuilder.Entity("Server.Models.User", b =>
                 {
-                    b.OwnsMany("Server.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("Server.Models.User.RefreshTokens#Server.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("UserId")
                                 .HasColumnType("text");
@@ -696,7 +696,7 @@ namespace Server.Migrations
 
                             b1.HasKey("UserId", "Id");
 
-                            b1.ToTable("RefreshToken");
+                            b1.ToTable("RefreshToken", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");

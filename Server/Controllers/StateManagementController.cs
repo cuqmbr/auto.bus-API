@@ -64,7 +64,7 @@ public class StateManagementController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRoute(int id, UpdateStateDto state)
+    public async Task<IActionResult> UpdateState(int id, UpdateStateDto state)
     {
         if (id != state.Id)
         {
@@ -82,7 +82,7 @@ public class StateManagementController : ControllerBase
     }
     
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRoute(int id)
+    public async Task<IActionResult> DeleteState(int id)
     {
         if (!await _stateManagementService.IsStateExists(id))
         {

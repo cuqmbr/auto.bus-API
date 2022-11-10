@@ -64,7 +64,7 @@ public class AddressManagementController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRoute(int id, UpdateAddressDto address)
+    public async Task<IActionResult> UpdateAddress(int id, UpdateAddressDto address)
     {
         if (id != address.Id)
         {
@@ -82,7 +82,7 @@ public class AddressManagementController : ControllerBase
     }
     
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRoute(int id)
+    public async Task<IActionResult> DeleteAddress(int id)
     {
         if (!await _addressManagementService.IsAddressExists(id))
         {

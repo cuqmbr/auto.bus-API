@@ -31,7 +31,8 @@ public class AuthenticationService : IAuthenticationService
     public async Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest)
     {
         var userWithSameEmail = await _userManager.FindByEmailAsync(regRequest.Email);
-        if (userWithSameEmail != null)
+        var userWithSameUsername = await _userManager.FindByNameAsync(regRequest.Username);
+        if (userWithSameEmail != null || userWithSameUsername != null)
         {
             return (false, $"Email {regRequest.Email} is already registered.");
         }
@@ -52,12 +53,21 @@ public class AuthenticationService : IAuthenticationService
         string? refreshToken)> AuthenticateAsync(AuthenticationRequest authRequest)
     {
         var authResponse = new AuthenticationResponse();
-        
-        var user = await _userManager.FindByEmailAsync(authRequest.Email);
+
+        User user;
+
+        if (authRequest.EmailOrUsername.Contains("@"))
+        {
+            user = await _userManager.FindByEmailAsync(authRequest.EmailOrUsername);
+        }
+        else
+        {
+            user = await _userManager.FindByNameAsync(authRequest.EmailOrUsername);
+        }
 
         if (user == null)
         {
-            authResponse.Message = $"No accounts registered with {authRequest.Email}.";
+            authResponse.Message = $"No accounts registered with {authRequest.EmailOrUsername}.";
             return (false, authResponse, null);
         }
 

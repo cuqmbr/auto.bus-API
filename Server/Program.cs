@@ -57,9 +57,6 @@ builder.Services.AddCors(options => {
 
 // Configuration from AppSettings
 builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
-// User Manager Service
-builder.Services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 // Adding Authentication - JWT
 builder.Services.AddAuthentication(options => {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -85,6 +82,13 @@ builder.Services.AddAuthentication(options => {
 builder.Services.AddAuthorization();
 
 builder.Services.AddAutoMapper(typeof(MapperInitializer));
+
+builder.Services.AddIdentity<User, IdentityRole>(options => {
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequiredLength = 8;
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_.";
+}).AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
 builder.Services.AddScoped<IStateManagementService, StateManagementService>();
@@ -120,10 +124,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Data seeding
-// using var scope = app.Services.CreateScope();
-// var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
-// var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
-// await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
+using var scope = app.Services.CreateScope();
+var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
+var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
+await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
 
 app.MapControllers();
 
