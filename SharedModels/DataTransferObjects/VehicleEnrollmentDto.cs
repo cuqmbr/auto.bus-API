@@ -2,15 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects;
 
-public class VehicleEnrollmentDto
+public class VehicleEnrollmentDto : CreateVehicleEnrollmentDto
 {
     public int Id { get; set; }
-    public int VehicleId { get; set; }
-    public int RouteId { get; set; }
-    public DateTime DepartureDateTimeUtc { get; set; }
-    public TimeSpan DelayTimeSpan { get; set; }
-    public bool IsCanceled {get; set; }
-    public string CancelationComment { get; set; } = null!; 
 }
 
 public class CreateVehicleEnrollmentDto
@@ -24,21 +18,15 @@ public class CreateVehicleEnrollmentDto
     [Required]
     [DataType(DataType.DateTime)]
     public DateTime DepartureDateTimeUtc { get; set; }
-    
-    public TimeSpan DelayTimeSpan { get; set; } = TimeSpan.Zero;
-
-    public bool IsCanceled { get; set; } = false;
-    public string? CancelationComment { get; set; } = null!;
 }
 
-public class UpdateVehicleEnrollmentDto
+public class UpdateVehicleEnrollmentDto : CreateVehicleEnrollmentDto
 {
     [Required]
     public int Id { get; set; }
-    public int VehicleId { get; set; }
-    public int RouteId { get; set; }
-    public DateTime DepartureDateTimeUtc { get; set; }
-    public TimeSpan DelayTimeSpan { get; set; }
-    public bool IsCanceled {get; set; }
+    
+    public TimeSpan DelayTimeSpan { get; set; } = TimeSpan.Zero;
+    
+    public bool IsCanceled { get; set; } = false;
     public string CancelationComment { get; set; } = null!;
 }

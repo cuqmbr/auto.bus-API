@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/routes")]
 [ApiController]
-public class RouteManagementController : ControllerBase
+public class RouteController : ControllerBase
 {
     private readonly IRouteManagementService _routeManagementService;
     
-    public RouteManagementController(IRouteManagementService routeManagementService)
+    public RouteController(IRouteManagementService routeManagementService)
     {
         _routeManagementService = routeManagementService;
     }

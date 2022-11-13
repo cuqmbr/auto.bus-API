@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/states")] 
 [ApiController] 
-public class StateManagementController : ControllerBase 
+public class StateController : ControllerBase 
 {
     private readonly IStateManagementService _stateManagementService;
     
-    public StateManagementController(IStateManagementService stateManagementService)
+    public StateController(IStateManagementService stateManagementService)
     {
         _stateManagementService = stateManagementService;
     }

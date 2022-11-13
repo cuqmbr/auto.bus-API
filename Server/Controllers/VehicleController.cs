@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/vehicles")]
 [ApiController]
-public class VehicleManagementController : ControllerBase
+public class VehicleController : ControllerBase
 {
     private readonly IVehicleManagementService _vehicleManagementService;
     
-    public VehicleManagementController(IVehicleManagementService vehicleManagementService)
+    public VehicleController(IVehicleManagementService vehicleManagementService)
     {
         _vehicleManagementService = vehicleManagementService;
     }

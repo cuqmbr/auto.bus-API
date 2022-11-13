@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/cities")]
 [ApiController]
-public class CityManagementController : ControllerBase
+public class CityController : ControllerBase
 {
     private readonly ICityManagementService _cityManagementService;
     
-    public CityManagementController(ICityManagementService cityManagementService)
+    public CityController(ICityManagementService cityManagementService)
     {
         _cityManagementService = cityManagementService;
     }

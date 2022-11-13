@@ -2,18 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects;
 
-public class RouteAddressDto 
+public class RouteAddressDto : CreateRouteAddressDto
 {
     public int Id { get; set; }
-    public int RouteId { get; set; }
-    public int AddressId { get; set; }
-    public int Order { get; set; }
-    [DataType(DataType.Duration)]
-    public TimeSpan TimeSpanToNextCity { get; set; }
-    [DataType(DataType.Duration)]
-    public TimeSpan WaitTimeSpan { get; set; }
-    [DataType(DataType.Currency)]
-    public double CostToNextCity { get; set; }
 }
 
 public class CreateRouteAddressDto
@@ -40,17 +31,18 @@ public class CreateRouteAddressDto
     public double CostToNextCity { get; set; }
 }
 
-public class UpdateRouteAddressDto
+public class UpdateRouteAddressDto : CreateRouteAddressDto
 {
     [Required]
     public int Id { get; set; }
-    public int RouteId { get; set; }
+}
+
+public class InRouteRouteAddressDto
+{
+    public int Id { get; set; }
     public int AddressId { get; set; }
     public int Order { get; set; }
-    [DataType(DataType.Duration)]
     public TimeSpan TimeSpanToNextCity { get; set; }
-    [DataType(DataType.Duration)]
     public TimeSpan WaitTimeSpan { get; set; }
-    [DataType(DataType.Currency)]
     public double CostToNextCity { get; set; }
 }

@@ -20,10 +20,13 @@ public class CreateTicketDto
     public int VehicleEnrollmentId { get; set; }
 }
 
-public class UpdateTicketDto : CreateTicketDto
+public class UpdateTicketDto
 {
     [Required]
     public int Id { get; set; }
+    
+    public string? UserId { get; set; } = null!;
+    public int? VehicleEnrollmentId { get; set; }
     
     [DataType(DataType.DateTime)]
     public DateTime PurchaseDateTimeUtc { get; set; }

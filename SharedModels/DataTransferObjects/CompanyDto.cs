@@ -2,12 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects;
 
-public class CompanyDto
+public class CompanyDto : CreateCompanyDto
 {
     public int Id { get; set; }
-    
-    public string Name { get; set; } = null!;
-    public string OwnerId { get; set; } = null!;
 }
 
 public class CreateCompanyDto
@@ -19,11 +16,8 @@ public class CreateCompanyDto
     public string OwnerId { get; set; } = null!;
 }
 
-public class UpdateCompanyDto
+public class UpdateCompanyDto : CreateCompanyDto
 {
     [Required]
     public int Id { get; set; }
-    
-    public string Name { get; set; } = null!;
-    public string OwnerId { get; set; } = null!;
 }

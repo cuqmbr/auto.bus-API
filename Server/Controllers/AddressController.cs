@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/addresses")]
 [ApiController]
-public class AddressManagementController : ControllerBase
+public class AddressController : ControllerBase
 {
     private readonly IAddressManagementService _addressManagementService;
     
-    public AddressManagementController(IAddressManagementService addressManagementService)
+    public AddressController(IAddressManagementService addressManagementService)
     {
         _addressManagementService = addressManagementService;
     }

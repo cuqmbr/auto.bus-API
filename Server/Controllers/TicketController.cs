@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/tickets")]
 [ApiController]
-public class TicketManagementController : ControllerBase
+public class TicketController : ControllerBase
 {
     private readonly ITicketManagementService _ticketManagementService;
     
-    public TicketManagementController(ITicketManagementService ticketManagementService)
+    public TicketController(ITicketManagementService ticketManagementService)
     {
         _ticketManagementService = ticketManagementService;
     }

@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/reviews")]
 [ApiController]
-public class ReviewManagementController : ControllerBase
+public class ReviewController : ControllerBase
 {
     private readonly IReviewManagementService _reviewManagementService;
     
-    public ReviewManagementController(IReviewManagementService reviewManagementService)
+    public ReviewController(IReviewManagementService reviewManagementService)
     {
         _reviewManagementService = reviewManagementService;
     }

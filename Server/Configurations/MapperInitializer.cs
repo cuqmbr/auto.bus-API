@@ -35,6 +35,7 @@ public class MapperInitializer : Profile
         CreateMap<RouteAddress, RouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, CreateRouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, UpdateRouteAddressDto>().ReverseMap();
+        CreateMap<RouteAddress, InRouteRouteAddressDto>().ReverseMap();
 
         CreateMap<Route, RouteDto>().ReverseMap();
         CreateMap<Route, CreateRouteDto>().ReverseMap();

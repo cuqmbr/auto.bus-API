@@ -2,11 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects;
 
-public class RouteDto
+public class RouteDto : CreateRouteDto
 {
     public int Id { get; set; }
     
-    public string Type { get; set; } = null!;
+    public virtual IList<InRouteRouteAddressDto> RouteAddresses { get; set; } = null!;
 }
 
 public class CreateRouteDto
@@ -15,10 +15,8 @@ public class CreateRouteDto
     public string Type { get; set; } = null!;
 }
 
-public class UpdateRouteDto
+public class UpdateRouteDto : CreateRouteDto
 {
     [Required]
     public int Id { get; set; }
-    
-    public string Type { get; set; } = null!;
 }

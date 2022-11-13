@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/companies")]
 [ApiController]
-public class CompanyManagementController : ControllerBase
+public class CompanyController : ControllerBase
 {
     private readonly ICompanyManagementService _companyManagementService;
     
-    public CompanyManagementController(ICompanyManagementService companyManagementService)
+    public CompanyController(ICompanyManagementService companyManagementService)
     {
         _companyManagementService = companyManagementService;
     }

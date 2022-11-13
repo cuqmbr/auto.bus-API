@@ -8,11 +8,11 @@ namespace Server.Controllers;
 
 [Route("api/countries")]
 [ApiController]
-public class CountryManagementController : ControllerBase
+public class CountryController : ControllerBase
 {
     private readonly ICountryManagementService _countryManagementService;
     
-    public CountryManagementController(ICountryManagementService countryManagementService)
+    public CountryController(ICountryManagementService countryManagementService)
     {
         _countryManagementService = countryManagementService;
     }

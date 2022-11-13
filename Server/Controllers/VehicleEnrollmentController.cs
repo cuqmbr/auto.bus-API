@@ -9,11 +9,11 @@ namespace Server.Controllers;
 
 [Route("api/vehicleEnrollments")]
 [ApiController]
-public class VehicleEnrollmentManagementController : ControllerBase
+public class VehicleEnrollmentController : ControllerBase
 {
     private readonly IVehicleEnrollmentManagementService _vehicleEnrollmentManagementService;
     
-    public VehicleEnrollmentManagementController(IVehicleEnrollmentManagementService vehicleEnrollmentManagementService)
+    public VehicleEnrollmentController(IVehicleEnrollmentManagementService vehicleEnrollmentManagementService)
     {
         _vehicleEnrollmentManagementService = vehicleEnrollmentManagementService;
     }
