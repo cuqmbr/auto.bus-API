@@ -7,7 +7,6 @@ namespace Server.Services;
 public interface IAddressManagementService
 {
     Task<(bool isSucceed, string message, AddressDto address)> AddAddress(CreateAddressDto createAddressDto);
-
     Task<(bool isSucceed, string message, IEnumerable<AddressDto> addresses,
         PagingMetadata<Address> pagingMetadata)> GetAddresses(AddressParameters parameters);
     Task<(bool isSucceed, string message, AddressDto address)> GetAddress(int id, string? fields);

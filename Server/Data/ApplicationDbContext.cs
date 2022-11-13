@@ -23,18 +23,4 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Country> Countries { get; set; } = null!;
     public DbSet<Ticket> Tickets { get; set; } = null!;
     public DbSet<Review> Reviews { get; set; } = null!;
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
-        
-        modelBuilder.Entity<RouteAddress>()
-            .HasKey(ra => new {ra.RouteId, ra.AddressId});
-
-        modelBuilder.Entity<Ticket>()
-            .HasKey(t => new {t.UserId, t.VehicleEnrollmentId});
-        
-        modelBuilder.Entity<Review>()
-            .HasKey(t => new {t.UserId, t.VehicleEnrollmentId});
-    }
 }

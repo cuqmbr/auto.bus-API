@@ -43,8 +43,8 @@ public class CityManagementService : ICityManagementService
             .AsQueryable();
         
         SearchByAllCityFields(ref dbCities, parameters.Search);
-        SearchByCityName(ref dbCities, parameters.Name);
-        SearchByStateId(ref dbCities, parameters.StateId);
+        FilterByCityName(ref dbCities, parameters.Name);
+        FilterByStateId(ref dbCities, parameters.StateId);
 
         try
         {
@@ -79,7 +79,7 @@ public class CityManagementService : ICityManagementService
                 s.Name.ToLower().Contains(search.ToLower()));
         }
         
-        void SearchByStateId(ref IQueryable<City> cities,
+        void FilterByStateId(ref IQueryable<City> cities,
             int? stateId)
         {
             if (!cities.Any() || stateId == null)
@@ -90,7 +90,7 @@ public class CityManagementService : ICityManagementService
             cities = cities.Where(s => s.StateId == stateId);
         }
         
-        void SearchByCityName(ref IQueryable<City> cities,
+        void FilterByCityName(ref IQueryable<City> cities,
             string? cityName)
         {
             if (!cities.Any() || String.IsNullOrWhiteSpace(cityName))

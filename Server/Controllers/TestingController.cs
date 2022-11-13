@@ -27,5 +27,11 @@ public class TestingController : ControllerBase
 
         return NotFound();
     }
+
+    [HttpPost("timespan")]
+    public async Task<IActionResult> TestTimeSpan([FromBody] TimeSpan ts)
+    {
+        return Ok();
+    }
 }
 

@@ -43,8 +43,8 @@ public class AddressManagementService : IAddressManagementService
             .AsQueryable();
         
         SearchByAllAddressFields(ref dbAddresses, parameters.Search);
-        SearchByAddressName(ref dbAddresses, parameters.Name);
-        SearchByCityId(ref dbAddresses, parameters.CityId);
+        FilterByAddressName(ref dbAddresses, parameters.Name);
+        FilterByCityId(ref dbAddresses, parameters.CityId);
 
         try
         {
@@ -79,7 +79,7 @@ public class AddressManagementService : IAddressManagementService
                 a.Name.ToLower().Contains(search.ToLower()));
         }
         
-        void SearchByCityId(ref IQueryable<Address> addresses,
+        void FilterByCityId(ref IQueryable<Address> addresses,
             int? cityId)
         {
             if (!addresses.Any() || cityId == null)
@@ -90,7 +90,7 @@ public class AddressManagementService : IAddressManagementService
             addresses = addresses.Where(a => a.CityId == cityId);
         }
         
-        void SearchByAddressName(ref IQueryable<Address> addresses,
+        void FilterByAddressName(ref IQueryable<Address> addresses,
             string? addressName)
         {
             if (!addresses.Any() || String.IsNullOrWhiteSpace(addressName))

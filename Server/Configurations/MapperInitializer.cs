@@ -34,8 +34,39 @@ public class MapperInitializer : Profile
 
         CreateMap<RouteAddress, RouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, CreateRouteAddressDto>().ReverseMap();
+        CreateMap<RouteAddress, UpdateRouteAddressDto>().ReverseMap();
 
         CreateMap<Route, RouteDto>().ReverseMap();
         CreateMap<Route, CreateRouteDto>().ReverseMap();
+        CreateMap<Route, UpdateRouteDto>().ReverseMap();
+
+
+
+
+
+        CreateMap<Ticket, TicketDto>().ReverseMap();
+        CreateMap<Ticket, CreateTicketDto>().ReverseMap();
+        CreateMap<Ticket, UpdateTicketDto>().ReverseMap();
+
+        CreateMap<Review, ReviewDto>().ReverseMap();
+        CreateMap<Review, CreateReviewDto>().ReverseMap();
+        CreateMap<Review, UpdateReviewDto>().ReverseMap();
+        
+        CreateMap<Company, CompanyDto>().ReverseMap();
+        CreateMap<Company, CreateCompanyDto>().ReverseMap();
+        CreateMap<Company, UpdateCompanyDto>().ReverseMap();
+        
+        CreateMap<Vehicle, VehicleDto>().ReverseMap();
+        CreateMap<Vehicle, CreateVehicleDto>().ReverseMap();
+        CreateMap<Vehicle, UpdateVehicleDto>().ReverseMap();
+        
+        CreateMap<VehicleEnrollment, VehicleEnrollmentDto>().ReverseMap();
+        CreateMap<VehicleEnrollment, CreateVehicleEnrollmentDto>().ReverseMap();
+        CreateMap<VehicleEnrollment, UpdateVehicleEnrollmentDto>().ReverseMap();
+
+
+        // CreateMap<User, UserDto>().ReverseMap();
+        // CreateMap<User, CreateUserDto>().ReverseMap();
+        // CreateMap<User, UpdateUserDto>().ReverseMap();
     }
 }

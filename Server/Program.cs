@@ -11,6 +11,7 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using Server.Services;
+using Route = Server.Models.Route;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,18 +95,37 @@ builder.Services.AddScoped<ICountryManagementService, CountryManagementService>(
 builder.Services.AddScoped<IStateManagementService, StateManagementService>();
 builder.Services.AddScoped<ICityManagementService, CityManagementService>();
 builder.Services.AddScoped<IAddressManagementService, AddressManagementService>();
-
-builder.Services.AddScoped<IDateTimeService, DateTimeService>();
+builder.Services.AddScoped<ITicketManagementService, TicketManagementService>();
+builder.Services.AddScoped<IReviewManagementService, ReviewManagementService>();
+builder.Services.AddScoped<ICompanyManagementService, CompanyManagementService>();
+builder.Services.AddScoped<IVehicleManagementService, VehicleManagementService>();
+builder.Services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmentManagementService>();
+builder.Services.AddScoped<IRouteManagementService, RouteManagementService>();
+builder.Services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
 builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
 builder.Services.AddScoped<ISortHelper<City>, SortHelper<City>>();
 builder.Services.AddScoped<ISortHelper<Address>, SortHelper<Address>>();
+builder.Services.AddScoped<ISortHelper<Ticket>, SortHelper<Ticket>>();
+builder.Services.AddScoped<ISortHelper<Review>, SortHelper<Review>>();
+builder.Services.AddScoped<ISortHelper<Company>, SortHelper<Company>>();
+builder.Services.AddScoped<ISortHelper<Vehicle>, SortHelper<Vehicle>>();
+builder.Services.AddScoped<ISortHelper<VehicleEnrollment>, SortHelper<VehicleEnrollment>>();
+builder.Services.AddScoped<ISortHelper<Route>, SortHelper<Route>>();
+builder.Services.AddScoped<ISortHelper<RouteAddress>, SortHelper<RouteAddress>>();
 
 builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
 builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
 builder.Services.AddScoped<IDataShaper<City>, DataShaper<City>>();
 builder.Services.AddScoped<IDataShaper<Address>, DataShaper<Address>>();
+builder.Services.AddScoped<IDataShaper<Ticket>, DataShaper<Ticket>>();
+builder.Services.AddScoped<IDataShaper<Review>, DataShaper<Review>>();
+builder.Services.AddScoped<IDataShaper<Company>, DataShaper<Company>>();
+builder.Services.AddScoped<IDataShaper<Vehicle>, DataShaper<Vehicle>>();
+builder.Services.AddScoped<IDataShaper<VehicleEnrollment>, DataShaper<VehicleEnrollment>>();
+builder.Services.AddScoped<IDataShaper<Route>, DataShaper<Route>>();
+builder.Services.AddScoped<IDataShaper<RouteAddress>, DataShaper<RouteAddress>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -124,10 +144,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Data seeding
-using var scope = app.Services.CreateScope();
-var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
-var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
-await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
+// using var scope = app.Services.CreateScope();
+// var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
+// var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
+// await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
 
 app.MapControllers();
 

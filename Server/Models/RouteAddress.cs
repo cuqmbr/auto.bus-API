@@ -1,10 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using SharedModels.DataTransferObjects;
 
 namespace Server.Models;
 
 public class RouteAddress
 {
+    [Key]
+    public int Id { get; set; }
+    
     [ForeignKey("RouteId")]
     public int RouteId { get; set; }
     public Route Route { get; set; } = null!;

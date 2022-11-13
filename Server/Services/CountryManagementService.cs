@@ -44,8 +44,8 @@ public class CountryManagementService : ICountryManagementService
             .AsQueryable();
         
         SearchByAllCountryFields(ref dbCountries, parameters.Search);
-        SearchByCountryCode(ref dbCountries, parameters.Code);
-        SearchByCountryName(ref dbCountries, parameters.Name);
+        FilterByCountryCode(ref dbCountries, parameters.Code);
+        FilterByCountryName(ref dbCountries, parameters.Name);
 
         try
         {
@@ -81,7 +81,7 @@ public class CountryManagementService : ICountryManagementService
                 c.Name.ToLower().Contains(search.ToLower()));
         }
         
-        void SearchByCountryCode(ref IQueryable<Country> countries,
+        void FilterByCountryCode(ref IQueryable<Country> countries,
             string? countryCode)
         {
             if (!countries.Any() || String.IsNullOrWhiteSpace(countryCode))
@@ -93,7 +93,7 @@ public class CountryManagementService : ICountryManagementService
                 c.Code.ToLower().Contains(countryCode.Trim().ToLower()));
         }
         
-        void SearchByCountryName(ref IQueryable<Country> countries,
+        void FilterByCountryName(ref IQueryable<Country> countries,
             string? countryName)
         {
             if (!countries.Any() || String.IsNullOrWhiteSpace(countryName))

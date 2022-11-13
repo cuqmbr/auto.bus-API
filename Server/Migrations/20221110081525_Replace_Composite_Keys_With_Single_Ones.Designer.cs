@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Data;
@@ -11,9 +12,10 @@ using Server.Data;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221110081525_Replace_Composite_Keys_With_Single_Ones")]
+    partial class Replace_Composite_Keys_With_Single_Ones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,6 +259,7 @@ namespace Server.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comment")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Rating")
@@ -511,13 +514,17 @@ namespace Server.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CancelationComment")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<TimeSpan?>("DelayTimeSpan")
+                    b.Property<TimeSpan>("DelayTimeSpan")
                         .HasColumnType("interval");
 
-                    b.Property<DateTime>("DepartureDateTimeUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly>("DepartureDateOnly")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("DepartureTimeOnlyUtc")
+                        .HasColumnType("time without time zone");
 
                     b.Property<bool>("IsCanceled")
                         .HasColumnType("boolean");
