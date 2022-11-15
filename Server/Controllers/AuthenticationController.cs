@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Server.Configurations;
@@ -71,11 +72,12 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
     
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [HttpPost("revoke-session")]
-    public async Task<IActionResult> RevokeToken([FromBody] RevokeRefreshTokenRequest revokeRequest)
+    public async Task<IActionResult> RevokeToken()
     {
         // accept token from request body or cookie
-        var token = revokeRequest.RefreshToken ?? Request.Cookies["refreshToken"];
+        var token = Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(token))
         {
             return BadRequest(new ResponseBase{ Message = "Refresh token is required." });
@@ -86,6 +88,8 @@ public class AuthenticationController : ControllerBase
         {
             return NotFound(new ResponseBase{ Message = "Refresh token not found." });
         }
+        
+        Response.Cookies.Delete("refreshToken");
         
         return Ok(new ResponseBase{ Message = "Refresh token revoked." });
     }

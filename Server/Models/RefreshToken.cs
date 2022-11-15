@@ -6,9 +6,9 @@ namespace Server.Models;
 public class RefreshToken
 {
     public string Token { get; set; } = null!;
-    public DateTime Expires { get; set; }
-    public bool IsExpired => DateTime.UtcNow >= Expires;
-    public DateTime Created { get; set; }
+    public DateTime ExpiryDateTime { get; set; }
+    public bool IsExpired => DateTime.UtcNow >= ExpiryDateTime;
+    public DateTime CreationDateTime { get; set; }
     public DateTime? Revoked { get; set; }
     public bool IsActive => Revoked == null && !IsExpired;
 }

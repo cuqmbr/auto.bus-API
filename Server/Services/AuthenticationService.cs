@@ -87,13 +87,13 @@ public class AuthenticationService : IAuthenticationService
             var activeRefreshToken =
                 user.RefreshTokens.First(t => t.IsActive);
             refreshTokenString = activeRefreshToken.Token;
-            authResponse.RefreshTokenExpirationDate = activeRefreshToken.Expires;
+            authResponse.RefreshTokenExpirationDate = activeRefreshToken.ExpiryDateTime;
         }
         else
         {
             var refreshToken = CreateRefreshToken();
             refreshTokenString = refreshToken.Token;
-            authResponse.RefreshTokenExpirationDate = refreshToken.Expires;
+            authResponse.RefreshTokenExpirationDate = refreshToken.ExpiryDateTime;
             user.RefreshTokens.Add(refreshToken);
             await _userManager.UpdateAsync(user);
         }
@@ -135,7 +135,7 @@ public class AuthenticationService : IAuthenticationService
         var jwtSecurityToken = await CreateJwtToken(user);
         authResponse.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
         
-        authResponse.RefreshTokenExpirationDate = newRefreshToken.Expires;
+        authResponse.RefreshTokenExpirationDate = newRefreshToken.ExpiryDateTime;
         
         return (true, authResponse, newRefreshToken.Token);
     }
@@ -208,8 +208,8 @@ public class AuthenticationService : IAuthenticationService
         return new RefreshToken
         {
             Token = Convert.ToBase64String(randomNumber),
-            Created = DateTime.UtcNow,
-            Expires = DateTime.UtcNow.AddDays(_jwt.RefreshTokenValidityInDays)
+            CreationDateTime = DateTime.UtcNow,
+            ExpiryDateTime = DateTime.UtcNow.AddDays(_jwt.RefreshTokenValidityInDays)
         };
     }
 }
