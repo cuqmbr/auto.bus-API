@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class RouteParameters : QueryStringParameters
+public class RouteParameters : ParametersBase
 {
     public const string DefaultFields = "id,type";
     

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
 using SharedModels.DataTransferObjects;
-using SharedModels.QueryStringParameters;
+using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 

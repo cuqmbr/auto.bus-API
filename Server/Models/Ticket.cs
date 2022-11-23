@@ -16,6 +16,7 @@ public class Ticket
     public int VehicleEnrollmentId { get; set; }
     public VehicleEnrollment VehicleEnrollment { get; set; } = null!;
     
-    public DateTime PurchaseDateTimeUtc { get; set; }
+    public DateTime PurchaseDateTimeUtc { get; set; } =  DateTime.UtcNow;
     public bool IsReturned { get; set; } = false;
+    public bool IsMissed { get; set; } = false;
 }

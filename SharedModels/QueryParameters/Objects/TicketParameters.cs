@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class TicketParameters : QueryStringParameters
+public class TicketParameters : ParametersBase
 {
     public const string DefaultFields = "id,userId,vehicleEnrollmentId,purchaseDateTimeUtc,isReturned";
     
@@ -13,4 +13,5 @@ public class TicketParameters : QueryStringParameters
     public DateTime? FromPurchaseDateTimeUtc { get; set; }
     public DateTime? ToPurchaseDateTimeUtc { get; set; }
     public bool? IsReturned { get; set; }
+    public string? UserId { get; set; }
 }

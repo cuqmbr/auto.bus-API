@@ -1,5 +1,6 @@
 using SharedModels.DataTransferObjects;
-using SharedModels.QueryStringParameters;
+using SharedModels.QueryParameters;
+using SharedModels.QueryParameters.Objects;
 using Route = Server.Models.Route;
 
 namespace Server.Services;

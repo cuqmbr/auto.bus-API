@@ -4,7 +4,8 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
-using SharedModels.QueryStringParameters;
+using SharedModels.QueryParameters;
+using SharedModels.QueryParameters.Objects;
 
 namespace Server.Services;
 
@@ -41,9 +42,10 @@ public class ReviewManagementService : IReviewManagementService
         var dbReviews = _dbContext.Reviews
             .AsQueryable();
 
-        FilterByReviewRating(ref dbReviews, parameters.Rating);
+        FilterByReviewRating(ref dbReviews, parameters.FromRating, parameters.ToRating);
         FilterByReviewComment(ref dbReviews, parameters.Comment);
-        
+        FilterByReviewUserId(ref dbReviews, parameters.UserId);
+
         try
         {
             dbReviews = _reviewSortHelper.ApplySort(dbReviews, parameters.Sort);
@@ -66,14 +68,15 @@ public class ReviewManagementService : IReviewManagementService
         return (true, "", reviewDtos, pagingMetadata);
 
         void FilterByReviewRating(ref IQueryable<Review> reviews,
-            int? rating)
+            int? fromRating, int? toRating)
         {
-            if (!reviews.Any() || rating == null)
+            if (!reviews.Any() || !fromRating.HasValue && !toRating.HasValue)
             {
                 return;
             }
 
-            reviews = reviews.Where(r => r.Rating == rating);
+            reviews = reviews.Where(r =>
+                r.Rating >= fromRating && r.Rating <= toRating);
         }
         
         void FilterByReviewComment(ref IQueryable<Review> reviews,
@@ -87,6 +90,18 @@ public class ReviewManagementService : IReviewManagementService
             reviews = reviews.Where(r =>
                 r.Comment != null &&
                 r.Comment.ToLower().Contains(comment.ToLower()));
+        }
+        
+        void FilterByReviewUserId(ref IQueryable<Review> reviews,
+            string? userId)
+        {
+            if (!reviews.Any() || String.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            reviews = reviews.Where(r =>
+                r.UserId.Contains(userId.ToLower()));
         }
 
         PagingMetadata<Review> ApplyPaging(ref IQueryable<Review> reviews,

@@ -37,12 +37,23 @@ public class UpdateRouteAddressDto : CreateRouteAddressDto
     public int Id { get; set; }
 }
 
-public class InRouteRouteAddressDto
+public class CreateRouteAddressWithAddressDto
 {
-    public int Id { get; set; }
-    public int AddressId { get; set; }
+    [Required]
     public int Order { get; set; }
+    
+    [Required]
+    [DataType(DataType.Duration)]
     public TimeSpan TimeSpanToNextCity { get; set; }
+    
+    [Required]
+    [DataType(DataType.Duration)]
     public TimeSpan WaitTimeSpan { get; set; }
+    
+    [Required]
+    [DataType(DataType.Currency)]
     public double CostToNextCity { get; set; }
+
+    [Required] 
+    public CreateAddressDto Address { get; set; } = null!;
 }

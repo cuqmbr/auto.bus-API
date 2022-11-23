@@ -4,7 +4,8 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
-using SharedModels.QueryStringParameters;
+using SharedModels.QueryParameters;
+using SharedModels.QueryParameters.Objects;
 
 namespace Server.Services;
 

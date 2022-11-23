@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class VehicleEnrollmentParameters : QueryStringParameters
+public class VehicleEnrollmentParameters : ParametersBase
 {
     public const string DefaultFields = "id,vehicleId,routeId,departureDateTimeUtc," +
                                         "delayTimeSpan,isCancelled,cancellationComment";

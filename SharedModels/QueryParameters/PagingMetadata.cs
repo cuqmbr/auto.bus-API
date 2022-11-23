@@ -1,4 +1,4 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters;
 
 public class PagingMetadata<T>
 {

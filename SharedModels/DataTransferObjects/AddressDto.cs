@@ -7,8 +7,6 @@ public class AddressDto : CreateAddressDto
     public int Id { get; set; }
 
     public InAddressCityDto City { get; set; } = null!;
-    
-    public virtual IList<RouteAddressDto> RouteAddresses { get; set; } = null!;
 }
 
 public class CreateAddressDto

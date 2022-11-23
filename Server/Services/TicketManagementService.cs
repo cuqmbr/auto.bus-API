@@ -4,7 +4,8 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using SharedModels.DataTransferObjects;
-using SharedModels.QueryStringParameters;
+using SharedModels.QueryParameters;
+using SharedModels.QueryParameters.Objects;
 
 namespace Server.Services;
 
@@ -41,11 +42,11 @@ public class TicketManagementService : ITicketManagementService
         var dbTickets = _dbContext.Tickets
             .AsQueryable();
 
-        FilterByTicketPurchaseDateTime(ref dbTickets,
-            parameters.FromPurchaseDateTimeUtc,
+        FilterByTicketPurchaseDateTime(ref dbTickets, parameters.FromPurchaseDateTimeUtc, 
             parameters.ToPurchaseDateTimeUtc);
         FilterByTicketReturnedState(ref dbTickets, parameters.IsReturned);
-        
+        FilterByTicketUserId(ref dbTickets, parameters.UserId);
+
         try
         {
             dbTickets = _ticketSortHelper.ApplySort(dbTickets, parameters.Sort);
@@ -89,6 +90,18 @@ public class TicketManagementService : ITicketManagementService
             }
 
             tickets = tickets.Where(t => t.IsReturned == isReturned);
+        }
+
+        void FilterByTicketUserId(ref IQueryable<Ticket> tickets,
+            string? userId)
+        {
+            if (!tickets.Any() || String.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            tickets = tickets.Where(t =>
+                t.UserId.ToLower().Contains(userId.ToLower()));
         }
 
         PagingMetadata<Ticket> ApplyPaging(ref IQueryable<Ticket> tickets,

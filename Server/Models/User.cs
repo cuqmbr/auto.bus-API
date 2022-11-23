@@ -6,5 +6,7 @@ public class User : IdentityUser
 {
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public List<RefreshToken> RefreshTokens { get; set; } = null!;
+    public IList<RefreshToken> RefreshTokens { get; set; } = null!;
+    public virtual IList<Ticket> Tickets { get; set; } = null!;
+    public virtual IList<Review> Reviews { get; set; } = null!;
 }

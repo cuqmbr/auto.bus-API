@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters;
 
-public class QueryStringParameters
+public class PagingParameters
 {
     public int PageNumber { get; set; } = 1;
 
@@ -11,8 +11,4 @@ public class QueryStringParameters
         get => _pageSize;
         set => _pageSize = value > MaxPageSize ? MaxPageSize : value;
     }
-    
-    public string? Search { get; set; }
-    public string? Sort { get; set; }
-    public string? Fields { get; set; }
 }

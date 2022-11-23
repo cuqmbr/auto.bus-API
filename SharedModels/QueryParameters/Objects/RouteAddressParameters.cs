@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class RouteAddressParameters : QueryStringParameters
+public class RouteAddressParameters : ParametersBase
 {
     public const string DefaultFields = "id,routeId,addressId,order,timeSpanToNextCity," +
                                         "waitTimeSpan,costToNextCity";

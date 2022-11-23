@@ -9,6 +9,7 @@ public class TicketDto : CreateTicketDto
     [DataType(DataType.DateTime)]
     public DateTime PurchaseDateTimeUtc { get; set; }
     public bool IsReturned { get; set; } = false;
+    public bool IsMissed { get; set; } = false;
 }
 
 public class CreateTicketDto
@@ -31,4 +32,5 @@ public class UpdateTicketDto
     [DataType(DataType.DateTime)]
     public DateTime PurchaseDateTimeUtc { get; set; }
     public bool IsReturned { get; set; } = false;
+    public bool IsMissed { get; set; } = false;
 }

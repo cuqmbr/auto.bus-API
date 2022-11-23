@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class ReviewParameters : QueryStringParameters
+public class ReviewParameters : ParametersBase
 {
     public const string DefaultFields = "id,userId,vehicleEnrollmentId,rating,comment";
     
@@ -10,6 +10,9 @@ public class ReviewParameters : QueryStringParameters
         Fields = DefaultFields;
     }
     
-    public int? Rating { get; set; }
+    public int? FromRating { get; set; }
+    public int? ToRating { get; set; }
+
     public string? Comment { get; set; }
+    public string? UserId { get; set; }
 }

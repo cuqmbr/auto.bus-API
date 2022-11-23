@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Data;
@@ -11,9 +12,10 @@ using Server.Data;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221115135952_Change_Refresh_Token_Property_Names")]
+    partial class Change_Refresh_Token_Property_Names
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -259,9 +261,6 @@ namespace Server.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("PostDateTimeUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
@@ -362,9 +361,6 @@ namespace Server.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsMissed")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsReturned")
                         .HasColumnType("boolean");
@@ -630,7 +626,7 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.Review", b =>
                 {
                     b.HasOne("Server.Models.User", "User")
-                        .WithMany("Reviews")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -679,7 +675,7 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.Ticket", b =>
                 {
                     b.HasOne("Server.Models.User", "User")
-                        .WithMany("Tickets")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -790,13 +786,6 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.State", b =>
                 {
                     b.Navigation("Cities");
-                });
-
-            modelBuilder.Entity("Server.Models.User", b =>
-                {
-                    b.Navigation("Reviews");
-
-                    b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618
         }

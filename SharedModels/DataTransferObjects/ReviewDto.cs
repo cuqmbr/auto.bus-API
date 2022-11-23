@@ -5,6 +5,9 @@ namespace SharedModels.DataTransferObjects;
 public class ReviewDto : CreateReviewDto
 {
     public int Id { get; set; }
+    
+    [DataType(DataType.DateTime)]
+    public DateTime PostDateTimeUtc { get; set; }
 }
 
 public class CreateReviewDto
@@ -26,4 +29,7 @@ public class UpdateReviewDto : CreateReviewDto
 {
     [Required]
     public int Id { get; set; }
+    
+    [DataType(DataType.DateTime)]
+    public DateTime PostDateTimeUtc { get; set; }
 }

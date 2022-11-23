@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class VehicleParameters : QueryStringParameters
+public class VehicleParameters : ParametersBase
 {
     public const string DefaultFields = "id,companyId,number,type,capacity,hasClimateControl," +
                                         "hasWiFi,hasWC,hasStewardess,hasTV,hasOutlet,hasBelts";

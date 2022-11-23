@@ -1,6 +1,6 @@
-namespace SharedModels.QueryStringParameters;
+namespace SharedModels.QueryParameters.Objects;
 
-public class CountryParameters : QueryStringParameters
+public class CountryParameters : ParametersBase
 {
     public const string DefaultFields = "id,code,name";
     

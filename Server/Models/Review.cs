@@ -15,7 +15,8 @@ public class Review
     [ForeignKey("VehicleEnrollmentId")]
     public int VehicleEnrollmentId { get; set; }
     public VehicleEnrollment VehicleEnrollment { get; set; } = null!;
-    
+
+    public DateTime PostDateTimeUtc { get; set; } = DateTime.UtcNow;
     public int Rating { get; set; }
     public string? Comment { get; set; }
 }

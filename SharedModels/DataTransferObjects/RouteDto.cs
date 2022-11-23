@@ -5,8 +5,6 @@ namespace SharedModels.DataTransferObjects;
 public class RouteDto : CreateRouteDto
 {
     public int Id { get; set; }
-    
-    public virtual IList<InRouteRouteAddressDto> RouteAddresses { get; set; } = null!;
 }
 
 public class CreateRouteDto
@@ -19,4 +17,11 @@ public class UpdateRouteDto : CreateRouteDto
 {
     [Required]
     public int Id { get; set; }
+}
+
+public class CreateRouteWithAddressesDto : CreateRouteDto
+{
+    [Required]
+    [MinLength(2)]
+    public IList<CreateRouteAddressWithAddressDto> RouteAddresses { get; set; } = null!;
 }

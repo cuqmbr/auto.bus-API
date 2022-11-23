@@ -11,6 +11,7 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using Server.Services;
+using SharedModels.DataTransferObjects;
 using Route = Server.Models.Route;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -103,6 +104,9 @@ builder.Services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmen
 builder.Services.AddScoped<IRouteManagementService, RouteManagementService>();
 builder.Services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+
+
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
 builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
 builder.Services.AddScoped<ISortHelper<City>, SortHelper<City>>();
@@ -115,6 +119,8 @@ builder.Services.AddScoped<ISortHelper<VehicleEnrollment>, SortHelper<VehicleEnr
 builder.Services.AddScoped<ISortHelper<Route>, SortHelper<Route>>();
 builder.Services.AddScoped<ISortHelper<RouteAddress>, SortHelper<RouteAddress>>();
 
+builder.Services.AddScoped<IDataShaper<User>, DataShaper<User>>();
+builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
 builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
 builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
 builder.Services.AddScoped<IDataShaper<City>, DataShaper<City>>();
