@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Data;
@@ -11,9 +12,10 @@ using Server.Data;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221123180952_Add_References_to_Compnay_and_VehicleEnrollment")]
+    partial class Add_References_to_Compnay_and_VehicleEnrollment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -746,7 +748,7 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.VehicleEnrollment", b =>
                 {
                     b.HasOne("Server.Models.Route", "Route")
-                        .WithMany("VehicleEnrollments")
+                        .WithMany()
                         .HasForeignKey("RouteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -785,8 +787,6 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.Route", b =>
                 {
                     b.Navigation("RouteAddresses");
-
-                    b.Navigation("VehicleEnrollments");
                 });
 
             modelBuilder.Entity("Server.Models.State", b =>

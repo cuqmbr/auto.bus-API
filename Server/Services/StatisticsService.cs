@@ -15,13 +15,15 @@ public class StatisticsService : IStatisticsService
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IDataShaper<UserDto> _userDataShaper;
+    private readonly IDataShaper<CompanyDto> _companyDataShaper;
 
     public StatisticsService(ApplicationDbContext dbContext, IMapper mapper,
-        IDataShaper<UserDto> userDataShaper)
+        IDataShaper<UserDto> userDataShaper, IDataShaper<CompanyDto> companyDataShaper)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _userDataShaper = userDataShaper;
+        _companyDataShaper = companyDataShaper;
     }
 
     // Popularity is measured in number of purchased tickets
@@ -37,7 +39,7 @@ public class StatisticsService : IStatisticsService
     {
         var fromDateUtc = DateTime.UtcNow - TimeSpan.FromDays(parameters.Days ?? parameters.DefaultDays);
         
-        var resultObjectList = _dbContext.Users
+        var resultObjects = _dbContext.Users
             .Include(u => u.Tickets)
             .Select(u => new
             {
@@ -48,22 +50,22 @@ public class StatisticsService : IStatisticsService
             .Take(parameters.Amount);
 
         
-        var dbUsers = resultObjectList.Select(i => i.User);
+        var dbUsers = resultObjects.Select(i => i.User);
         var pagingMetadata = ApplyPaging(ref dbUsers, parameters.PageNumber,
             parameters.PageSize);
         
-        var userDtos = _mapper.ProjectTo<UserDto>(dbUsers).ToList();
+        var userDtos = _mapper.ProjectTo<UserDto>(dbUsers).ToArray();
         var shapedData = _userDataShaper
             .ShapeData(userDtos, parameters.Fields ?? parameters.DefaultFields)
-            .ToList();
+            .ToArray();
 
         if (parameters.Fields != null &&
             parameters.Fields.ToLower().Contains("ticketCount".ToLower()))
         {
-            var dbUsersList = await dbUsers.ToListAsync();
-            for (int i = 0; i < dbUsersList.Count; i++)
+            var dbUsersArray = await dbUsers.ToArrayAsync();
+            for (int i = 0; i < dbUsersArray.Length; i++)
             {
-                var ticketCount = dbUsersList[i].Tickets.Count;
+                var ticketCount = dbUsersArray[i].Tickets.Count;
                 shapedData[i].TryAdd("TicketCount", ticketCount);
             }
         }
@@ -71,11 +73,85 @@ public class StatisticsService : IStatisticsService
         return (true, null, shapedData, pagingMetadata);
     }
 
-    // Popularity is measured in number of purchased tickets & rating
-    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> companies)> 
-        GetPopularCompanies(int amount)
+    // Popularity is measured in average rating of all VehicleEnrollments of a company
+    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> companies, PagingMetadata<Company> pagingMetadata)> 
+        GetPopularCompanies(PopularCompanyParameters parameters)
     {
-        throw new NotImplementedException();
+        var dbCompanies = _dbContext.Companies
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Tickets)
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Reviews);
+
+        // Calculate average rating for each company
+        
+        var dbCompaniesArray = await dbCompanies.ToArrayAsync();
+        double[] companiesAvgRatings = new double[dbCompaniesArray.Length];
+
+        for (int i = 0; i < dbCompaniesArray.Length; i++)
+        {
+            double tempC = 0;
+            
+            foreach (var v in dbCompaniesArray[i].Vehicles)
+            {
+                double tempV = 0;
+                
+                foreach (var ve in v.VehicleEnrollments)
+                {
+                    double tempVE = 0;
+                    
+                    foreach (var r in ve.Reviews)
+                    {
+                        tempVE += r.Rating;
+                    }
+
+                    tempV += tempVE / ve.Reviews.Count;
+                }
+
+                tempC += tempV / v.VehicleEnrollments.Count;
+            }
+
+            companiesAvgRatings[i] = tempC / dbCompaniesArray[i].Vehicles.Count;
+        }
+
+        // Sort companiesAvgRatings and apply the same sorting to dbCompaniesArray
+        
+        int n = companiesAvgRatings.Length;
+        for (int i = 0; i < n - 1; i++)
+        {
+            for (int j = 0; j < n - i - 1; j++)
+            {
+                if (companiesAvgRatings[j] > companiesAvgRatings[j + 1]) 
+                {
+                    // swap temp and arr[i]
+                    (companiesAvgRatings[j], companiesAvgRatings[j + 1]) = (companiesAvgRatings[j + 1], companiesAvgRatings[j]);
+                    (dbCompaniesArray[j], dbCompaniesArray[j + 1]) = (dbCompaniesArray[j + 1], dbCompaniesArray[j]);
+                }
+            }
+        }
+
+        companiesAvgRatings = companiesAvgRatings.Skip(companiesAvgRatings.Length - parameters.Amount).Reverse().ToArray();
+        var popularCompanies = dbCompaniesArray.Skip(companiesAvgRatings.Length - parameters.Amount).Reverse().AsQueryable();
+        
+        // Apply paging, convert to DTOs and shape data
+        
+        var pagingMetadata = ApplyPaging(ref popularCompanies, parameters.PageNumber, parameters.PageSize);
+        var companyDtos = _mapper.ProjectTo<CompanyDto>(popularCompanies).ToArray();
+
+        var shapedData = _companyDataShaper.ShapeData(companyDtos, parameters.Fields ?? parameters.DefaultFields).ToArray();
+
+        if (parameters.Fields != null &&
+            parameters.Fields.ToLower().Contains("rating".ToLower()))
+        {
+            for (int i = 0; i < shapedData.Length; i++)
+            {
+                shapedData[i].TryAdd("Rating", companiesAvgRatings[i]);
+            }
+        }
+        
+        return (true, null, shapedData, pagingMetadata);
     }
 
     // Popularity is measured in number of routes using the station

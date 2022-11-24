@@ -23,4 +23,6 @@ public class Vehicle
     public bool HasTV { get; set; }
     public bool HasOutlet { get; set; }
     public bool HasBelts { get; set; }
+
+    public IList<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;
 }

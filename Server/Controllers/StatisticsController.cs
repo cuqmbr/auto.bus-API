@@ -39,9 +39,18 @@ public class StatisticsController : ControllerBase
     }
     
     [HttpGet("companies")]
-    public async Task<IActionResult> GetPopularCompanies([FromQuery] int amount = 10)
+    public async Task<IActionResult> GetPopularCompanies([FromQuery] PopularCompanyParameters parameters)
     {
-        return Ok();
+        var result = await _statisticsService.GetPopularCompanies(parameters);
+
+        if (!result.IsSucceed)
+        {
+            return BadRequest(result.message);
+        }
+        
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
+
+        return Ok(result.companies);
     }
     
     [HttpGet("stations")]

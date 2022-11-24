@@ -11,4 +11,5 @@ public class Route
     public string Type { get; set; } = null!;
 
     public virtual IList<RouteAddress> RouteAddresses { get; set; } = null!;
+    public virtual IList<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;
 }

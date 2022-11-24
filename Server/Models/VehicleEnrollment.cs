@@ -22,4 +22,7 @@ public class VehicleEnrollment
 
     public bool IsCanceled { get; set; } = false;
     public string? CancelationComment { get; set; } = null!;
+    
+    public IList<Ticket> Tickets { get; set; } = null!;
+    public IList<Review> Reviews { get; set; } = null!;
 }

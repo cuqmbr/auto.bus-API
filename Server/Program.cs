@@ -120,7 +120,6 @@ builder.Services.AddScoped<ISortHelper<Route>, SortHelper<Route>>();
 builder.Services.AddScoped<ISortHelper<RouteAddress>, SortHelper<RouteAddress>>();
 
 builder.Services.AddScoped<IDataShaper<User>, DataShaper<User>>();
-builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
 builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
 builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
 builder.Services.AddScoped<IDataShaper<City>, DataShaper<City>>();
@@ -132,6 +131,9 @@ builder.Services.AddScoped<IDataShaper<Vehicle>, DataShaper<Vehicle>>();
 builder.Services.AddScoped<IDataShaper<VehicleEnrollment>, DataShaper<VehicleEnrollment>>();
 builder.Services.AddScoped<IDataShaper<Route>, DataShaper<Route>>();
 builder.Services.AddScoped<IDataShaper<RouteAddress>, DataShaper<RouteAddress>>();
+
+builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
+builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

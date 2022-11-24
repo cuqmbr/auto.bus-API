@@ -13,6 +13,6 @@ public class Company
     [ForeignKey("OwnerId")]
     public string OwnerId { get; set; }  = null!;
     public User Owner { get; set; } = null!;
-    
-    public List<Vehicle>? Vehicles { get; set; }
+
+    public virtual List<Vehicle> Vehicles { get; set; } = null!;
 }
