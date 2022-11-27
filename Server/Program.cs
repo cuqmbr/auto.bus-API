@@ -134,6 +134,7 @@ builder.Services.AddScoped<IDataShaper<RouteAddress>, DataShaper<RouteAddress>>(
 
 builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
 builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
+builder.Services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

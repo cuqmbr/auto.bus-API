@@ -92,16 +92,17 @@ public class TicketManagementService : ITicketManagementService
             tickets = tickets.Where(t => t.IsReturned == isReturned);
         }
 
+        // TODO: change TicketParameters 
         void FilterByTicketUserId(ref IQueryable<Ticket> tickets,
             string? userId)
         {
-            if (!tickets.Any() || String.IsNullOrWhiteSpace(userId))
-            {
-                return;
-            }
-
-            tickets = tickets.Where(t =>
-                t.UserId.ToLower().Contains(userId.ToLower()));
+            // if (!tickets.Any() || String.IsNullOrWhiteSpace(userId))
+            // {
+            //     return;
+            // }
+            //
+            // tickets = tickets.Where(t =>
+            //     t.UserId.ToLower().Contains(userId.ToLower()));
         }
 
         PagingMetadata<Ticket> ApplyPaging(ref IQueryable<Ticket> tickets,

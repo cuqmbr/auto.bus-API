@@ -54,9 +54,18 @@ public class StatisticsController : ControllerBase
     }
     
     [HttpGet("stations")]
-    public async Task<IActionResult> GetPopularStations([FromQuery] int amount = 10)
+    public async Task<IActionResult> GetPopularStations([FromQuery] PopularAddressesParameters parameters)
     {
-        return Ok();
+        var result = await _statisticsService.GetPopularStations(parameters);
+
+        if (!result.IsSucceed)
+        {
+            return BadRequest(result.message);
+        }
+        
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
+
+        return Ok(result.stations);
     }
 }
 

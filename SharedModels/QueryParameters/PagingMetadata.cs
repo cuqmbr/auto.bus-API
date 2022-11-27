@@ -10,7 +10,7 @@ public class PagingMetadata<T>
     public bool HasPrevious => CurrentPage > 1;
     public bool HasNext => CurrentPage < TotalPages;
     
-    public PagingMetadata(IQueryable<T> source, int pageNumber, int pageSize)
+    public PagingMetadata(IEnumerable<T> source, int pageNumber, int pageSize)
     {
         TotalCount = source.Count();
         PageSize = pageSize;

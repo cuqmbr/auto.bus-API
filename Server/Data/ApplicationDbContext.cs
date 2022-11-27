@@ -21,6 +21,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<City> Cities { get; set; } = null!;
     public DbSet<State> States { get; set; } = null!;
     public DbSet<Country> Countries { get; set; } = null!;
+    public DbSet<TicketGroup> TicketGroups { get; set; } = null!;
     public DbSet<Ticket> Tickets { get; set; } = null!;
     public DbSet<Review> Reviews { get; set; } = null!;
 }

@@ -16,14 +16,17 @@ public class StatisticsService : IStatisticsService
     private readonly IMapper _mapper;
     private readonly IDataShaper<UserDto> _userDataShaper;
     private readonly IDataShaper<CompanyDto> _companyDataShaper;
+    private readonly IDataShaper<AddressDto> _addressDataShaper;
 
     public StatisticsService(ApplicationDbContext dbContext, IMapper mapper,
-        IDataShaper<UserDto> userDataShaper, IDataShaper<CompanyDto> companyDataShaper)
+        IDataShaper<UserDto> userDataShaper, IDataShaper<CompanyDto> companyDataShaper, 
+        IDataShaper<AddressDto> addressDataShaper)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _userDataShaper = userDataShaper;
         _companyDataShaper = companyDataShaper;
+        _addressDataShaper = addressDataShaper;
     }
 
     // Popularity is measured in number of purchased tickets
@@ -33,48 +36,56 @@ public class StatisticsService : IStatisticsService
         throw new NotImplementedException();
     }
 
-    // Engagement is measured in number of tickets bought in last 60 days
-    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> users, PagingMetadata<User> pagingMetadata)> 
+    // Engagement is measured in number of purchases made in past N days
+    // One purchase contains one (direct route) or more (route with transfers) tickets 
+    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> users, 
+            PagingMetadata<ExpandoObject> pagingMetadata)>
         GetEngagedUsers(EngagedUserParameters parameters)
     {
-        var fromDateUtc = DateTime.UtcNow - TimeSpan.FromDays(parameters.Days ?? parameters.DefaultDays);
-        
+        var fromDateUtc = 
+            DateTime.UtcNow - TimeSpan.FromDays(parameters.Days ?? parameters.DefaultDays);
+
         var resultObjects = _dbContext.Users
-            .Include(u => u.Tickets)
+            .Include(u => u.TicketGroups)
+            .ThenInclude(tg => tg.Tickets)
             .Select(u => new
             {
                 User = u,
-                Tickets = u.Tickets.Where(t => t.PurchaseDateTimeUtc >= fromDateUtc)
+                TicketGroups = u.TicketGroups.Where(tg =>
+                    tg.Tickets.First().PurchaseDateTimeUtc >= fromDateUtc)
             })
-            .OrderByDescending(o => o.User.Tickets.Count)
+            .OrderByDescending(o => o.TicketGroups.Count())
             .Take(parameters.Amount);
 
         
         var dbUsers = resultObjects.Select(i => i.User);
-        var pagingMetadata = ApplyPaging(ref dbUsers, parameters.PageNumber,
-            parameters.PageSize);
-        
         var userDtos = _mapper.ProjectTo<UserDto>(dbUsers).ToArray();
-        var shapedData = _userDataShaper
+        var shapedDataArray = _userDataShaper
             .ShapeData(userDtos, parameters.Fields ?? parameters.DefaultFields)
             .ToArray();
-
+        
         if (parameters.Fields != null &&
-            parameters.Fields.ToLower().Contains("ticketCount".ToLower()))
+            parameters.Fields.ToLower().Contains("purchaseCount".ToLower()))
         {
             var dbUsersArray = await dbUsers.ToArrayAsync();
             for (int i = 0; i < dbUsersArray.Length; i++)
             {
-                var ticketCount = dbUsersArray[i].Tickets.Count;
-                shapedData[i].TryAdd("TicketCount", ticketCount);
+                var ticketCount = dbUsersArray[i].TicketGroups.Count;
+                shapedDataArray[i].TryAdd("PurchaseCount", ticketCount);
             }
         }
         
-        return (true, null, shapedData, pagingMetadata);
+        var shapedData = shapedDataArray.AsQueryable();
+        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        shapedDataArray = shapedData.ToArray();
+
+        return (true, null, shapedDataArray, pagingMetadata);
     }
 
     // Popularity is measured in average rating of all VehicleEnrollments of a company
-    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> companies, PagingMetadata<Company> pagingMetadata)> 
+    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> companies, 
+            PagingMetadata<ExpandoObject> pagingMetadata)>
         GetPopularCompanies(PopularCompanyParameters parameters)
     {
         var dbCompanies = _dbContext.Companies
@@ -132,33 +143,133 @@ public class StatisticsService : IStatisticsService
             }
         }
 
-        companiesAvgRatings = companiesAvgRatings.Skip(companiesAvgRatings.Length - parameters.Amount).Reverse().ToArray();
-        var popularCompanies = dbCompaniesArray.Skip(companiesAvgRatings.Length - parameters.Amount).Reverse().AsQueryable();
+        companiesAvgRatings = companiesAvgRatings
+            .Skip(companiesAvgRatings.Length - parameters.Amount).Reverse()
+            .ToArray();
+        var popularCompanies = dbCompaniesArray
+            .Skip(companiesAvgRatings.Length - parameters.Amount).Reverse()
+            .AsQueryable();
         
-        // Apply paging, convert to DTOs and shape data
-        
-        var pagingMetadata = ApplyPaging(ref popularCompanies, parameters.PageNumber, parameters.PageSize);
-        var companyDtos = _mapper.ProjectTo<CompanyDto>(popularCompanies).ToArray();
+        // Convert to DTOs, shape data and apply paging
 
-        var shapedData = _companyDataShaper.ShapeData(companyDtos, parameters.Fields ?? parameters.DefaultFields).ToArray();
+        var companyDtos = _mapper.ProjectTo<CompanyDto>(popularCompanies);
+        var shapedDataArray = _companyDataShaper.ShapeData(companyDtos,
+            parameters.Fields ?? parameters.DefaultFields).ToArray();
 
         if (parameters.Fields != null &&
             parameters.Fields.ToLower().Contains("rating".ToLower()))
         {
-            for (int i = 0; i < shapedData.Length; i++)
+            for (int i = 0; i < shapedDataArray.Length; i++)
             {
-                shapedData[i].TryAdd("Rating", companiesAvgRatings[i]);
+                shapedDataArray[i].TryAdd("Rating", companiesAvgRatings[i]);
             }
         }
         
-        return (true, null, shapedData, pagingMetadata);
+        var shapedData = shapedDataArray.AsQueryable();
+        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        shapedDataArray = shapedData.ToArray();
+        
+        return (true, null, shapedDataArray, pagingMetadata);
     }
 
-    // Popularity is measured in number of routes using the station
-    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> stations)> 
-        GetPopularStations(int amount)
+    // Popularity is measured in number tickets in which the address is the first or last station
+    public async Task<(bool IsSucceed, string? message, IEnumerable<ExpandoObject> stations, 
+            PagingMetadata<ExpandoObject> pagingMetadata)>
+        GetPopularStations(PopularAddressesParameters parameters)
     {
-        throw new NotImplementedException();
+        // throw new NotImplementedException();
+
+        var fromDateUtc = 
+            DateTime.UtcNow - TimeSpan.FromDays(parameters.Days ?? parameters.DefaultDays);
+
+        var dbTicketGroupsArray = await _dbContext.TicketGroups
+            .Include(tg => tg.Tickets)
+            .Where(tg => tg.Tickets.First().PurchaseDateTimeUtc >= fromDateUtc)
+            .ToArrayAsync();
+
+        // Count appearances for each address id <Id, Count> 
+        var addressCountDict = new Dictionary<int, int>();
+
+        foreach (var tg in dbTicketGroupsArray)
+        {
+            if (!addressCountDict.ContainsKey(tg.Tickets.First().FirstRouteAddressId))
+            {
+                addressCountDict.Add(tg.Tickets.First().FirstRouteAddressId, 1);
+            }
+            else
+            {
+                addressCountDict[tg.Tickets.First().FirstRouteAddressId] += 1;
+            }
+            
+            if (!addressCountDict.ContainsKey(tg.Tickets.Last().LastRouteAddressId))
+            {
+                addressCountDict.Add(tg.Tickets.Last().LastRouteAddressId, 1);
+            }
+            else
+            {
+                addressCountDict[tg.Tickets.Last().LastRouteAddressId] += 1;
+            }
+        }
+
+        // Sort by number of appearances in descending order ->
+        // Take amount given in parameters ->
+        // Order by Id in Ascending order (needed for further sorting of two arrays simultaneously)
+        addressCountDict = addressCountDict.OrderByDescending(a => a.Value)
+            .Take(parameters.Amount).OrderBy(a => a.Key)
+            .ToDictionary(x => x.Key, x => x.Value);
+        
+        // Separate Ids and counts into two arrays
+        var addressIds = addressCountDict.Keys.ToArray();
+        var addressCountArray = addressCountDict.Values.ToArray();
+        
+        // Get top addresses from database ordered by Id (same as
+        // addressIds addressCountDict and )
+        var dbAddressesArray =  await _dbContext.Addresses
+            .Where(a => addressIds.Any(id => a.Id == id))
+            .OrderBy(a => a.Id).ToArrayAsync();
+
+        // Sort addressCountArray and simultaneously sort dbAddressesArray
+        // in the same manner
+        int n = addressCountArray.Length;
+        for (int i = 0; i < n - 1; i++)
+        {
+            for (int j = 0; j < n - i - 1; j++)
+            {
+                if (addressCountArray[j] > addressCountArray[j + 1]) 
+                {
+                    // swap temp and arr[i]
+                    (addressCountArray[j], addressCountArray[j + 1]) = (addressCountArray[j + 1], addressCountArray[j]);
+                    (dbAddressesArray[j], dbAddressesArray[j + 1]) = (dbAddressesArray[j + 1], dbAddressesArray[j]);
+                }
+            }
+        }
+
+        // Reverse sorted arrays (the result will be two "linked" arrays sorterd
+        // in descending order by addressCount)
+        addressCountArray = addressCountArray.Reverse().ToArray();
+        dbAddressesArray = dbAddressesArray.Reverse().ToArray();
+
+        var addressDtos =
+            _mapper.ProjectTo<AddressDto>(dbAddressesArray.AsQueryable());
+        var shapedDataArray = _addressDataShaper.ShapeData(addressDtos,
+            parameters.Fields ?? parameters.DefaultFields).ToArray();
+
+        if (parameters.Fields != null &&
+            parameters.Fields.ToLower().Contains("purchaseCount".ToLower()))
+        {
+            for (int i = 0; i < shapedDataArray.Length; i++)
+            {
+                shapedDataArray[i].TryAdd("purchaseCount", addressCountArray[i]);
+            }
+        }
+
+        var shapedData = shapedDataArray.AsQueryable();
+        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        shapedDataArray = shapedData.ToArray();
+        
+        return (true, null, shapedDataArray, pagingMetadata);
     }
     
     PagingMetadata<T> ApplyPaging<T>(ref IQueryable<T> obj,
