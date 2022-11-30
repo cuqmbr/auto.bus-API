@@ -26,6 +26,7 @@ public class ReportService : IReportService
             .ThenInclude(t => t.VehicleEnrollment)
             .ThenInclude(ve => ve.Vehicle)
             .ThenInclude(v => v.Company)
+            
             .Include(tg => tg.User)
             .Include(tg => tg.Tickets)
             .ThenInclude(t => t.VehicleEnrollment)
@@ -35,6 +36,12 @@ public class ReportService : IReportService
             .ThenInclude(a => a.City)
             .ThenInclude(c => c.State)
             .ThenInclude(s => s.Country)
+            
+            .Include(tg => tg.User)
+            .Include(tg => tg.Tickets)
+            .ThenInclude(t => t.VehicleEnrollment)
+            .ThenInclude(ve => ve.RouteAddressDetails)
+            
             .FirstOrDefaultAsync(tg => tg.Id == ticketGroupId);
         
         // Define document
@@ -374,13 +381,16 @@ public class ReportService : IReportService
             
             foreach (var routeAddress in routeAddresses)
             {
+                var details = routeAddress.RouteAddressDetails
+                    .First(rad => rad.RouteAddressId == routeAddress.Id);
+                
                 if (routeAddress.AddressId == ticket.FirstRouteAddressId)
                 {
                     break;
                 }
 
-                departureDateTimeUtc += routeAddress.TimeSpanToNextCity;
-                departureDateTimeUtc += routeAddress.WaitTimeSpan;
+                departureDateTimeUtc += details.TimeSpanToNextCity;
+                departureDateTimeUtc += details.WaitTimeSpan;
             }
 
             return departureDateTimeUtc;
@@ -395,12 +405,15 @@ public class ReportService : IReportService
             
             foreach (var routeAddress in routeAddresses)
             {
+                var details = routeAddress.RouteAddressDetails
+                    .First(rad => rad.RouteAddressId == routeAddress.Id);
+                
                 if (routeAddress.AddressId == ticket.LastRouteAddressId)
                 {
                     break;
                 }
 
-                arrivalDateTimeUtc += routeAddress.TimeSpanToNextCity;
+                arrivalDateTimeUtc += details.TimeSpanToNextCity;
             }
 
             return arrivalDateTimeUtc;
@@ -432,7 +445,10 @@ public class ReportService : IReportService
             
             foreach (var routeAddress in routeAddresses)
             {
-                cost += routeAddress.CostToNextCity;
+                var details = routeAddress.RouteAddressDetails
+                    .First(rad => rad.RouteAddressId == routeAddress.Id);
+                
+                cost += details.CostToNextCity;
             }
             
             return cost;

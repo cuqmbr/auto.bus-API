@@ -16,6 +16,10 @@ public class VehicleEnrollment
     public int RouteId { get; set; }
     public Route Route { get; set; } = null!;
     
+    [ForeignKey("RouteAddressDetailsId")]
+    public int RouteAddressDetailsId { get; set; }
+    public virtual IList<RouteAddressDetails> RouteAddressDetails { get; set; } = null!;
+    
     public DateTime DepartureDateTimeUtc { get; set; }
 
     public TimeSpan? DelayTimeSpan { get; set; }

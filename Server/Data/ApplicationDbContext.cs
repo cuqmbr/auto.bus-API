@@ -18,6 +18,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Route> Routes { get; set; } = null!;
     public DbSet<RouteAddress> RouteAddresses { get; set; } = null!;
     public DbSet<Address> Addresses { get; set; } = null!;
+
+    public DbSet<RouteAddressDetails> RouteAddressDetails { get; set; } = null!;
     public DbSet<City> Cities { get; set; } = null!;
     public DbSet<State> States { get; set; } = null!;
     public DbSet<Country> Countries { get; set; } = null!;

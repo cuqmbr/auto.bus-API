@@ -16,19 +16,8 @@ public class CreateRouteAddressDto
     public int AddressId { get; set; }
     
     [Required]
+    [Range(0, Int32.MaxValue)]
     public int Order { get; set; }
-    
-    [Required]
-    [DataType(DataType.Duration)]
-    public TimeSpan TimeSpanToNextCity { get; set; }
-    
-    [Required]
-    [DataType(DataType.Duration)]
-    public TimeSpan WaitTimeSpan { get; set; }
-    
-    [Required]
-    [DataType(DataType.Currency)]
-    public double CostToNextCity { get; set; }
 }
 
 public class UpdateRouteAddressDto : CreateRouteAddressDto
@@ -39,21 +28,16 @@ public class UpdateRouteAddressDto : CreateRouteAddressDto
 
 public class CreateRouteAddressWithAddressDto
 {
+    [Range(0, Int32.MaxValue)]
+    public int Order { get; set; }
+
     [Required]
+    public CreateAddressInRouteAddress Address { get; set; } = null!;
+}
+
+public class RouteAddressWithAddressDto
+{
     public int Order { get; set; }
     
-    [Required]
-    [DataType(DataType.Duration)]
-    public TimeSpan TimeSpanToNextCity { get; set; }
-    
-    [Required]
-    [DataType(DataType.Duration)]
-    public TimeSpan WaitTimeSpan { get; set; }
-    
-    [Required]
-    [DataType(DataType.Currency)]
-    public double CostToNextCity { get; set; }
-
-    [Required] 
-    public CreateAddressDto Address { get; set; } = null!;
+    public AddressInRouteAddress Address { get; set; } = null!;
 }

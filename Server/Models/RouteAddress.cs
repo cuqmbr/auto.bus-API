@@ -16,8 +16,9 @@ public class RouteAddress
     public int AddressId { get; set; }
     public Address Address { get; set; } = null!;
     
+    [ForeignKey("RouteAddressDetailsId")]
+    public int RouteAddressDetailsId { get; set; }
+    public virtual IList<RouteAddressDetails> RouteAddressDetails { get; set; } = null!;
+    
     public int Order { get; set; }
-    public TimeSpan TimeSpanToNextCity { get; set; }
-    public TimeSpan WaitTimeSpan { get; set; }
-    public double CostToNextCity { get; set; }
 }

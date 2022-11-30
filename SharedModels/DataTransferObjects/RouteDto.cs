@@ -25,3 +25,8 @@ public class CreateRouteWithAddressesDto : CreateRouteDto
     [MinLength(2)]
     public IList<CreateRouteAddressWithAddressDto> RouteAddresses { get; set; } = null!;
 }
+
+public class RouteWithAddressesDto : RouteDto
+{
+    public IList<RouteAddressWithAddressDto> RouteAddresses { get; set; } = null!;
+}

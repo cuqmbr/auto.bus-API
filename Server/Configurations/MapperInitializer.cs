@@ -31,16 +31,20 @@ public class MapperInitializer : Profile
         CreateMap<Address, CreateAddressDto>().ReverseMap();
         CreateMap<Address, UpdateAddressDto>().ReverseMap();
         CreateMap<Address, InCityAddressDto>().ReverseMap();
+        CreateMap<Address, CreateAddressInRouteAddress>().ReverseMap();
+        CreateMap<Address, AddressInRouteAddress>().ReverseMap();
 
         CreateMap<RouteAddress, RouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, CreateRouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, UpdateRouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, CreateRouteAddressWithAddressDto>().ReverseMap();
+        CreateMap<RouteAddress, RouteAddressWithAddressDto>().ReverseMap();
 
         CreateMap<Route, RouteDto>().ReverseMap();
         CreateMap<Route, CreateRouteDto>().ReverseMap();
         CreateMap<Route, UpdateRouteDto>().ReverseMap();
         CreateMap<Route, CreateRouteWithAddressesDto>().ReverseMap();
+        CreateMap<Route, RouteWithAddressesDto>().ReverseMap();
 
 
 

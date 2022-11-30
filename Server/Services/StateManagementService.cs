@@ -44,6 +44,8 @@ public class StateManagementService : IStateManagementService
             .Include(s => s.Cities)
             .ThenInclude(c => c.Addresses).AsQueryable();
         
+        var s = dbStates.ToList().ConvertAll(s => _mapper.Map<StateDto>(s));
+        
         SearchByAllStateFields(ref dbStates, parameters.Search);
         FilterByStateName(ref dbStates, parameters.Name);
         FilterByCountryId(ref dbStates, parameters.CountryId);

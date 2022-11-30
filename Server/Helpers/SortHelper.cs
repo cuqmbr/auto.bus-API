@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
 using System.Text;
@@ -14,8 +15,9 @@ public class SortHelper<T> : ISortHelper<T>
         }
 
         var orderParams = orderByQueryString.Trim().Split(",");
-        var propertyInfos =
-            typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var propertyStrings = typeof(T) == typeof(ExpandoObject) ? 
+            (entities.First() as ExpandoObject).ToDictionary(o => o.Key, o => o.Value).Keys.ToList() :
+            typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList().ConvertAll(o => o.GetType().ToString());
         var orderQueryBuilder = new StringBuilder();
         
         foreach (var param in orderParams)
@@ -26,8 +28,8 @@ public class SortHelper<T> : ISortHelper<T>
             }
             
             var propertyFromQueryName = param[0] == '-' || param[0] == '+' ? param.Substring(1) : param;
-            var objectProperty = propertyInfos.FirstOrDefault(pi =>
-                pi.Name.Equals(propertyFromQueryName, StringComparison.InvariantCultureIgnoreCase));
+            var objectProperty = propertyStrings.FirstOrDefault(ps =>
+                ps.Equals(propertyFromQueryName, StringComparison.InvariantCultureIgnoreCase));
 
             if (objectProperty == null)
             {
@@ -36,11 +38,13 @@ public class SortHelper<T> : ISortHelper<T>
             
             var sortingOrder = param[0] == '-' ? "descending" : "ascending";
             
-            orderQueryBuilder.Append($"{objectProperty.Name} {sortingOrder}, ");
+            orderQueryBuilder.Append($"{objectProperty} {sortingOrder}, ");
         }
 
         var orderQuery = orderQueryBuilder.ToString().TrimEnd(',', ' ');
 
-        return entities.OrderBy(orderQuery);
+        return typeof(T) == typeof(ExpandoObject) ? 
+            entities.Cast<dynamic>().OrderBy(orderQuery).Cast<T>() : 
+            entities.OrderBy(orderQuery);
     }
 }

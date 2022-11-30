@@ -5,7 +5,8 @@ namespace SharedModels.DataTransferObjects;
 public class StateDto : CreateStateDto
 {
     public int Id { get; set; }
-    public InStateCountryDto Country { get; set; } = null!;
+    
+    public string FullName = null!;
     
     public virtual IList<InStateCityDto> Cities { get; set; } = null!;
 }

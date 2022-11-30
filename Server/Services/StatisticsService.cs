@@ -17,16 +17,18 @@ public class StatisticsService : IStatisticsService
     private readonly IDataShaper<UserDto> _userDataShaper;
     private readonly IDataShaper<CompanyDto> _companyDataShaper;
     private readonly IDataShaper<AddressDto> _addressDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public StatisticsService(ApplicationDbContext dbContext, IMapper mapper,
         IDataShaper<UserDto> userDataShaper, IDataShaper<CompanyDto> companyDataShaper, 
-        IDataShaper<AddressDto> addressDataShaper)
+        IDataShaper<AddressDto> addressDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _userDataShaper = userDataShaper;
         _companyDataShaper = companyDataShaper;
         _addressDataShaper = addressDataShaper;
+        _pager = pager;
     }
 
     // Popularity is measured in number of purchased tickets
@@ -76,8 +78,8 @@ public class StatisticsService : IStatisticsService
         }
         
         var shapedData = shapedDataArray.AsQueryable();
-        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
-            parameters.PageSize);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData,
+            parameters.PageNumber, parameters.PageSize);
         shapedDataArray = shapedData.ToArray();
 
         return (true, null, shapedDataArray, pagingMetadata);
@@ -166,8 +168,8 @@ public class StatisticsService : IStatisticsService
         }
         
         var shapedData = shapedDataArray.AsQueryable();
-        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
-            parameters.PageSize);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData,
+            parameters.PageNumber, parameters.PageSize);
         shapedDataArray = shapedData.ToArray();
         
         return (true, null, shapedDataArray, pagingMetadata);
@@ -265,23 +267,10 @@ public class StatisticsService : IStatisticsService
         }
 
         var shapedData = shapedDataArray.AsQueryable();
-        var pagingMetadata = ApplyPaging(ref shapedData, parameters.PageNumber,
-            parameters.PageSize);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData,
+            parameters.PageNumber, parameters.PageSize);
         shapedDataArray = shapedData.ToArray();
         
         return (true, null, shapedDataArray, pagingMetadata);
-    }
-    
-    PagingMetadata<T> ApplyPaging<T>(ref IQueryable<T> obj,
-        int pageNumber, int pageSize)
-    {
-        var metadata = new PagingMetadata<T>(obj,
-            pageNumber, pageSize);
-            
-        obj = obj
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
-
-        return metadata;
     }
 }

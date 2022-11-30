@@ -30,6 +30,19 @@ public class RouteController : ControllerBase
         return CreatedAtAction(nameof(GetRoute), new {id = result.route.Id}, result.route);
     }
 
+    [HttpPost("withAddresses")]
+    public async Task<IActionResult> AddRouteWithAddresses(CreateRouteWithAddressesDto route)
+    {
+        var result = await _routeManagementService.AddRouteWithAddresses(route);
+    
+        if (!result.isSucceed)
+        {
+            return result.actionResult;
+        }
+    
+        return CreatedAtAction(nameof(GetRoute), new {id = result.route.Id}, result.route);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetRoutes([FromQuery] RouteParameters parameters)
     {
@@ -38,6 +51,21 @@ public class RouteController : ControllerBase
         if (!result.isSucceed)
         {
             return BadRequest(result.message);
+        }
+        
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
+        
+        return Ok(result.routes);
+    }
+    
+    [HttpGet("withAddresses")]
+    public async Task<IActionResult> GetRouteWithAddresses([FromQuery] RouteWithAddressesParameters parameters)
+    {
+        var result = await _routeManagementService.GetRoutesWithAddresses(parameters);
+
+        if (!result.isSucceed)
+        {
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -54,6 +82,24 @@ public class RouteController : ControllerBase
         }
 
         var result = await _routeManagementService.GetRoute(id, fields);
+
+        if (!result.isSucceed)
+        {
+            return BadRequest(result.message);
+        }
+
+        return Ok(result.route);
+    }
+    
+    [HttpGet("withAddresses/{id}")]
+    public async Task<IActionResult> GetRouteWithAddresses(int id, [FromQuery] string? fields)
+    {
+        if (!await _routeManagementService.IsRouteExists(id))
+        {
+            return NotFound();
+        }
+
+        var result = await _routeManagementService.GetRouteWithAddresses(id, fields);
 
         if (!result.isSucceed)
         {

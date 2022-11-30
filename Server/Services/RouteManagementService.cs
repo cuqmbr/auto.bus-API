@@ -1,4 +1,7 @@
+using System.Dynamic;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,17 +16,23 @@ public class RouteManagementService : IRouteManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Route> _routeSortHelper;
-    private readonly IDataShaper<Route> _routeDataShaper;
+    private readonly ISortHelper<ExpandoObject> _routeSortHelper;
+    private readonly IDataShaper<RouteDto> _routeDataShaper;
+    private readonly IDataShaper<RouteWithAddressesDto> _routeWithAddressesDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public RouteManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Route> routeSortHelper, 
-        IDataShaper<Route> routeDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> routeSortHelper, 
+        IDataShaper<RouteDto> routeDataShaper, 
+        IDataShaper<RouteWithAddressesDto> routeWithAddressesDataShaper, 
+        IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _routeSortHelper = routeSortHelper;
         _routeDataShaper = routeDataShaper;
+        _routeWithAddressesDataShaper = routeWithAddressesDataShaper;
+        _pager = pager;
     }
 
     public async Task<(bool isSucceed, string message, RouteDto route)> AddRoute(CreateRouteDto createRouteDto)
@@ -36,8 +45,31 @@ public class RouteManagementService : IRouteManagementService
         return (true, String.Empty, _mapper.Map<RouteDto>(route));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<RouteDto> routes,
-            PagingMetadata<Route> pagingMetadata)> GetRoutes(RouteParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, RouteWithAddressesDto route)> AddRouteWithAddresses(CreateRouteWithAddressesDto createRouteWithAddressesDto)
+    {
+        var route = _mapper.Map<Route>(createRouteWithAddressesDto);
+
+        foreach (var routeAddress in route.RouteAddresses)
+        {
+            var dbAddress = await _dbContext.Addresses
+                .FirstOrDefaultAsync(a => a.Id == routeAddress.AddressId);
+
+            if (dbAddress == null)
+            {
+                return (false, new BadRequestObjectResult($"Address with Id = {routeAddress.AddressId} doesn't exist"), null!);
+            }
+            
+            routeAddress.Address = dbAddress;
+        }
+        
+        await _dbContext.Routes.AddAsync(route);
+        await _dbContext.SaveChangesAsync();
+        
+        return (true, null, _mapper.Map<RouteWithAddressesDto>(route));
+    }
+
+    public async Task<(bool isSucceed, string message, IEnumerable<ExpandoObject> routes,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetRoutes(RouteParameters parameters)
     {
         var dbRoutes = _dbContext.Routes
             .AsQueryable();
@@ -45,9 +77,12 @@ public class RouteManagementService : IRouteManagementService
         SearchByAllRouteFields(ref dbRoutes, parameters.Search);
         FilterByRouteType(ref dbRoutes, parameters.Type);
 
+        var routeDtos = _mapper.ProjectTo<RouteDto>(dbRoutes);
+        var shapedData = _routeDataShaper.ShapeData(routeDtos, parameters.Fields).AsQueryable();
+
         try
         {
-            dbRoutes = _routeSortHelper.ApplySort(dbRoutes, parameters.Sort);
+            shapedData = _routeSortHelper.ApplySort(shapedData, parameters.Sort);
             
             // By calling Any() we will check if LINQ to Entities Query will be
             // executed. If not it will throw an InvalidOperationException exception
@@ -57,14 +92,11 @@ public class RouteManagementService : IRouteManagementService
         {
             return (false, "Invalid sorting string", null, null)!;
         }
-
-        var pagingMetadata = ApplyPaging(ref dbRoutes, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedRoutesData = _routeDataShaper.ShapeData(dbRoutes, parameters.Fields);
-        var routeDtos = shapedRoutesData.ToList().ConvertAll(r => _mapper.Map<RouteDto>(r));
         
-        return (true, "", routeDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, "", shapedData, pagingMetadata);
 
         void SearchByAllRouteFields(ref IQueryable<Route> route,
             string? search)
@@ -88,23 +120,100 @@ public class RouteManagementService : IRouteManagementService
 
             routes = routes.Where(r => r.Type == type);
         }
+    }
+    
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> routes,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetRoutesWithAddresses(RouteWithAddressesParameters parameters)
+    {
+        var dbRoutes = _dbContext.Routes
+            .Include(r => r.RouteAddresses.OrderBy(ra => ra.Order))
+            .ThenInclude(ra => ra.Address).ThenInclude(a => a.City)
+            .ThenInclude(c => c.State).ThenInclude(s => s.Country)
+            .AsQueryable();
+
+        SearchByAllRouteFields(ref dbRoutes, parameters.Search);
+        FilterByRouteType(ref dbRoutes, parameters.Type);
+        FilterByFromAddressName(ref dbRoutes, parameters.FromAddressName);
+        FilterByToAddressName(ref dbRoutes, parameters.ToAddressName);
+
+        var routeDtos = _mapper.ProjectTo<RouteWithAddressesDto>(dbRoutes); 
+        var shapedData = _routeWithAddressesDataShaper.ShapeData(routeDtos, parameters.Fields).AsQueryable();
         
-
-        PagingMetadata<Route> ApplyPaging(ref IQueryable<Route> routes,
-            int pageNumber, int pageSize)
+        try
         {
-            var metadata = new PagingMetadata<Route>(routes,
-                pageNumber, pageSize);
-            
-            routes = routes
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
+            shapedData = _routeSortHelper.ApplySort(shapedData, parameters.Sort);
+        }
+        catch (Exception e)
+        {
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null, null)!;
+        }
+        
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
 
-            return metadata;
+        return (true, null, shapedData, pagingMetadata);
+
+        void SearchByAllRouteFields(ref IQueryable<Route> route,
+            string? search)
+        {
+            if (!route.Any() || String.IsNullOrWhiteSpace(search))
+            {
+                return;
+            }
+
+            // TODO Optimize (remove client evaluation)
+            route = route.ToArray().Where(r =>
+                r.Type.ToLower().Contains(search.ToLower()) ||
+                r.RouteAddresses.OrderBy(ra => ra.Order).First().Address
+                    .GetFullName().ToLower().Contains(search.ToLower()) ||
+                r.RouteAddresses.OrderBy(ra => ra.Order).Last().Address
+                    .GetFullName().ToLower().Contains(search.ToLower()))
+                .AsQueryable();
+        }
+        
+        void FilterByRouteType(ref IQueryable<Route> routes,
+            string? type)
+        {
+            if (!routes.Any() || String.IsNullOrWhiteSpace(type))
+            {
+                return;
+            }
+
+            routes = routes.Where(r => r.Type.ToLower().Contains(type.ToLower()));
+        }
+        
+        void FilterByFromAddressName(ref IQueryable<Route> routes,
+            string? addressName)
+        {
+            if (!routes.Any() || String.IsNullOrWhiteSpace(addressName))
+            {
+                return;
+            }
+
+            // TODO Optimize (remove client evaluation)
+            routes = routes.ToArray().Where(r =>
+                r.RouteAddresses.First().Address
+                    .GetFullName().ToLower().Contains(addressName.ToLower()))
+                .AsQueryable();
+        }
+        
+        void FilterByToAddressName(ref IQueryable<Route> routes,
+            string? addressName)
+        {
+            if (!routes.Any() || String.IsNullOrWhiteSpace(addressName))
+            {
+                return;
+            }
+
+            // TODO Optimize (remove client evaluation)
+            routes = routes.ToArray().Where(r =>
+                r.RouteAddresses.Last().Address.
+                    GetFullName().ToLower().Contains(addressName.ToLower()))
+                .AsQueryable();
         }
     }
     
-    public async Task<(bool isSucceed, string message, RouteDto route)> GetRoute(int id, string? fields)
+    public async Task<(bool isSucceed, string message, ExpandoObject route)> GetRoute(int id, string? fields)
     {
         var dbRoute = await _dbContext.Routes.Where(r => r.Id == id)
             .FirstOrDefaultAsync();
@@ -119,10 +228,33 @@ public class RouteManagementService : IRouteManagementService
             fields = RouteParameters.DefaultFields;
         }
         
-        var shapedRouteData = _routeDataShaper.ShapeData(dbRoute, fields);
-        var routeDto = _mapper.Map<RouteDto>(shapedRouteData);
+        var routeDto = _mapper.Map<RouteDto>(dbRoute);
+        var shapedRouteData = _routeDataShaper.ShapeData(routeDto, fields);
 
-        return (true, "", routeDto);
+        return (true, "", shapedRouteData);
+    }
+    
+    public async Task<(bool isSucceed, string message, ExpandoObject route)> GetRouteWithAddresses(int id, string? fields)
+    {
+        var dbRoute = await _dbContext.Routes.Where(r => r.Id == id)
+            .Include(r => r.RouteAddresses).ThenInclude(ra => ra.Address)
+            .ThenInclude(a => a.City).ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country).FirstOrDefaultAsync();
+
+        if (dbRoute == null)
+        {
+            return (false, $"Route doesn't exist", null)!;
+        }
+        
+        if (String.IsNullOrWhiteSpace(fields))
+        {
+            fields = RouteWithAddressesParameters.DefaultFields;
+        }
+        
+        var routeDto = _mapper.Map<RouteWithAddressesDto>(dbRoute);
+        var shapedRouteData = _routeDataShaper.ShapeData(routeDto, fields);
+
+        return (true, "", shapedRouteData);
     }
 
     public async Task<(bool isSucceed, string message, UpdateRouteDto route)> UpdateRoute(UpdateRouteDto updateRouteDto)

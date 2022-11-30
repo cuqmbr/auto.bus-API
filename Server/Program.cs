@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -105,7 +106,7 @@ builder.Services.AddScoped<IRouteManagementService, RouteManagementService>();
 builder.Services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
 builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
@@ -132,9 +133,15 @@ builder.Services.AddScoped<IDataShaper<VehicleEnrollment>, DataShaper<VehicleEnr
 builder.Services.AddScoped<IDataShaper<Route>, DataShaper<Route>>();
 builder.Services.AddScoped<IDataShaper<RouteAddress>, DataShaper<RouteAddress>>();
 
+builder.Services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
+
 builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
 builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 builder.Services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
+builder.Services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
+builder.Services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
+
+builder.Services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

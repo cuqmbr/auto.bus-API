@@ -5,8 +5,7 @@ namespace SharedModels.DataTransferObjects;
 public class AddressDto : CreateAddressDto
 {
     public int Id { get; set; }
-
-    public InAddressCityDto City { get; set; } = null!;
+    public string FullName = null!;
 }
 
 public class CreateAddressDto
@@ -37,4 +36,25 @@ public class InCityAddressDto
     public string Name { get; set; } = null!;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+}
+
+public class CreateAddressInRouteAddress
+{
+    public int? Id { get; set; }
+    
+    [StringLength(maximumLength: 250, ErrorMessage = "Address name is too long")]
+    public string? Name { get; set; } = null!;
+    
+    [Range(-90, 90, ErrorMessage = "Latitude must be in range(-90, 90)")]
+    public double? Latitude { get; set; }
+    
+    [Range(-180, 180, ErrorMessage = "Longitude must be in range(-180, 180)")]
+    public double? Longitude { get; set; }
+    
+    public int? CityId { get; set; }
+}
+
+public class AddressInRouteAddress : CreateAddressInRouteAddress
+{
+    public string FullName = null!;
 }
