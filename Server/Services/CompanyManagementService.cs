@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,61 +15,57 @@ public class CompanyManagementService : ICompanyManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Company> _companySortHelper;
-    private readonly IDataShaper<Company> _companyDataShaper;
+    private readonly ISortHelper<ExpandoObject> _companySortHelper;
+    private readonly IDataShaper<CompanyDto> _companyDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public CompanyManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Company> companySortHelper, 
-        IDataShaper<Company> companyDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> companySortHelper, 
+        IDataShaper<CompanyDto> companyDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _companySortHelper = companySortHelper;
         _companyDataShaper = companyDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, CompanyDto company)> AddCompany(CreateCompanyDto createCompanyDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, CompanyDto company)> AddCompany(CreateCompanyDto createCompanyDto)
     {
         var company = _mapper.Map<Company>(createCompanyDto);
     
         await _dbContext.Companies.AddAsync(company);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<CompanyDto>(company));
+        return (true, null, _mapper.Map<CompanyDto>(company));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<CompanyDto> companies,
-            PagingMetadata<Company> pagingMetadata)> GetCompanies(CompanyParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> companies,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetCompanies(CompanyParameters parameters)
     {
         var dbCompanies = _dbContext.Companies
             .AsQueryable();
 
-        var v = dbCompanies.Any();
-
         SearchByAllCompanyFields(ref dbCompanies, parameters.Search);
         FilterByCompanyName(ref dbCompanies, parameters.Name);
         FilterByCompanyOwnerId(ref dbCompanies, parameters.OwnerId);
+
+        var companyDtos = _mapper.ProjectTo<CompanyDto>(dbCompanies);
+        var shapedData = _companyDataShaper.ShapeData(companyDtos, parameters.Fields).AsQueryable();
         
         try
         {
-            dbCompanies = _companySortHelper.ApplySort(dbCompanies, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbCompanies.Any();
+            shapedData = _companySortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbCompanies, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedCompaniesData = _companyDataShaper.ShapeData(dbCompanies, parameters.Fields);
-        var companyDtos = shapedCompaniesData.ToList().ConvertAll(c => _mapper.Map<CompanyDto>(c));
         
-        return (true, "", companyDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllCompanyFields(ref IQueryable<Company> companies,
             string? search)
@@ -102,43 +100,30 @@ public class CompanyManagementService : ICompanyManagementService
 
             companies = companies.Where(c => c.OwnerId == ownerId);
         }
-
-        PagingMetadata<Company> ApplyPaging(ref IQueryable<Company> companies,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<Company>(companies,
-                pageNumber, pageSize);
-            
-            companies = companies
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, CompanyDto company)> GetCompany(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject company)> GetCompany(int id, string? fields)
     {
-        var dbCompany = await _dbContext.Companies.Where(c => c.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbCompany == null)
+        if (!await IsCompanyExists(id))
         {
-            return (false, $"Company doesn't exist", null)!;
+            return (false, new NotFoundResult(), null!);
         }
         
+        var dbCompany = await _dbContext.Companies.Where(c => c.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = CompanyParameters.DefaultFields;
         }
         
-        var shapedCompanyData = _companyDataShaper.ShapeData(dbCompany, fields);
-        var companyDto = _mapper.Map<CompanyDto>(shapedCompanyData);
+        var companyDto = _mapper.Map<CompanyDto>(dbCompany);
+        var shapedData = _companyDataShaper.ShapeData(companyDto, fields);
 
-        return (true, "", companyDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateCompanyDto company)> UpdateCompany(UpdateCompanyDto updateCompanyDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, CompanyDto company)> UpdateCompany(UpdateCompanyDto updateCompanyDto)
     {
         var company = _mapper.Map<Company>(updateCompanyDto);
         _dbContext.Entry(company).State = EntityState.Modified;
@@ -151,30 +136,28 @@ public class CompanyManagementService : ICompanyManagementService
         {
             if (!await IsCompanyExists(updateCompanyDto.Id))
             {
-                return (false, $"Company with id:{updateCompanyDto.Id} doesn'c exist", null)!;
+                return (false, new BadRequestResult(), null!);
             }
-            
-            throw;
         }
 
-        var dbCompany = await _dbContext.Companies.FirstOrDefaultAsync(c => c.Id == company.Id);
+        var dbCompany = await _dbContext.Companies.FirstAsync(c => c.Id == company.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateCompanyDto>(dbCompany));
+        return (true, null, _mapper.Map<CompanyDto>(dbCompany));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteCompany(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteCompany(int id)
     {
         var dbCompany = await _dbContext.Companies.FirstOrDefaultAsync(c => c.Id == id);
     
         if (dbCompany == null)
         {
-            return (false, $"Company with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
     
         _dbContext.Companies.Remove(dbCompany);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsCompanyExists(int id)

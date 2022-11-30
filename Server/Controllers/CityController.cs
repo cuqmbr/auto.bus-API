@@ -24,7 +24,7 @@ public class CityController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetCity), new {id = result.city.Id}, result.city);
@@ -37,7 +37,7 @@ public class CityController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class CityController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCity(int id, [FromQuery] string? fields)
     {
-        if (!await _cityManagementService.IsCityExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _cityManagementService.GetCity(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.city);
@@ -75,7 +70,7 @@ public class CityController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.city);
@@ -84,16 +79,11 @@ public class CityController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCountry(int id)
     {
-        if (!await _cityManagementService.IsCityExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _cityManagementService.DeleteCity(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

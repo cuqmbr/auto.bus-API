@@ -1,5 +1,6 @@
 using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -14,62 +15,58 @@ public class StateManagementService : IStateManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<State> _stateSortHelper;
-    private readonly IDataShaper<State> _stateDataShaper;
+    private readonly ISortHelper<ExpandoObject> _stateSortHelper;
+    private readonly IDataShaper<StateDto> _stateDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public StateManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<State> stateSortHelper, 
-        IDataShaper<State> stateDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> stateSortHelper, 
+        IDataShaper<StateDto> stateDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _stateSortHelper = stateSortHelper;
         _stateDataShaper = stateDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, StateDto state)> AddState(CreateStateDto createStateDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, StateDto state)> AddState(CreateStateDto createStateDto)
     {
         var state = _mapper.Map<State>(createStateDto);
     
         await _dbContext.States.AddAsync(state);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<StateDto>(state));
+        return (true, null, _mapper.Map<StateDto>(state));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<StateDto> states,
-            PagingMetadata<State> pagingMetadata)> GetStates(StateParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> states,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetStates(StateParameters parameters)
     {
         var dbStates = _dbContext.States.Include(s => s.Country)
             .Include(s => s.Cities)
             .ThenInclude(c => c.Addresses).AsQueryable();
-        
-        var s = dbStates.ToList().ConvertAll(s => _mapper.Map<StateDto>(s));
-        
+
         SearchByAllStateFields(ref dbStates, parameters.Search);
         FilterByStateName(ref dbStates, parameters.Name);
         FilterByCountryId(ref dbStates, parameters.CountryId);
 
+        var stateDtos = _mapper.ProjectTo<StateDto>(dbStates);
+        var shapedData = _stateDataShaper.ShapeData(stateDtos, parameters.Fields).AsQueryable();
+        
         try
         {
-            dbStates = _stateSortHelper.ApplySort(dbStates, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbStates.Any();
+            shapedData = _stateSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbStates, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedStatesData = _stateDataShaper.ShapeData(dbStates, parameters.Fields);
-        var stateDtos = shapedStatesData.ToList().ConvertAll(s => _mapper.Map<StateDto>(s));
         
-        return (true, "", stateDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllStateFields(ref IQueryable<State> states,
             string? search)
@@ -105,45 +102,32 @@ public class StateManagementService : IStateManagementService
             states = states.Where(s =>
                 s.Name.ToLower().Contains(stateName.Trim().ToLower()));
         }
-
-        PagingMetadata<State> ApplyPaging(ref IQueryable<State> states,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<State>(states,
-                pageNumber, pageSize);
-            
-            states = states
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, StateDto state)> GetState(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject state)> GetState(int id, string? fields)
     {
+        if (!await IsStateExists(id))
+        {
+            return (false, new NotFoundResult(), null!);
+        }
+        
         var dbState = await _dbContext.States.Where(s => s.Id == id)
             .Include(s => s.Country).Include(s => s.Cities)
             .ThenInclude(c => c.Addresses)
-            .FirstOrDefaultAsync();
+            .FirstAsync();
 
-        if (dbState == null)
-        {
-            return (false, $"State doesn't exist", null)!;
-        }
-        
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = StateParameters.DefaultFields;
         }
         
-        var shapedStateData = _stateDataShaper.ShapeData(dbState, fields);
-        var stateDto = _mapper.Map<StateDto>(shapedStateData);
+        var stateDto = _mapper.Map<StateDto>(dbState);
+        var shapedData = _stateDataShaper.ShapeData(stateDto, fields);
 
-        return (true, "", stateDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateStateDto state)> UpdateState(UpdateStateDto updateStateDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, StateDto state)> UpdateState(UpdateStateDto updateStateDto)
     {
         var state = _mapper.Map<State>(updateStateDto);
         _dbContext.Entry(state).State = EntityState.Modified;
@@ -156,30 +140,28 @@ public class StateManagementService : IStateManagementService
         {
             if (!await IsStateExists(updateStateDto.Id))
             {
-                return (false, $"State with id:{updateStateDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
-            
-            throw;
         }
 
-        var dbState = await _dbContext.States.FirstOrDefaultAsync(s => s.Id == state.Id);
+        var dbState = await _dbContext.States.FirstAsync(s => s.Id == state.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateStateDto>(dbState));
+        return (true, null, _mapper.Map<StateDto>(dbState));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteState(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteState(int id)
     {
         var dbState = await _dbContext.States.FirstOrDefaultAsync(s => s.Id == id);
     
         if (dbState == null)
         {
-            return (false, $"State with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
     
         _dbContext.States.Remove(dbState);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsStateExists(int id)

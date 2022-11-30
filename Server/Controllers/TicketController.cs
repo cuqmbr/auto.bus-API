@@ -24,7 +24,7 @@ public class TicketController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetTicket), new {id = result.ticket.Id}, result.ticket);
@@ -37,7 +37,7 @@ public class TicketController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class TicketController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTicket(int id, [FromQuery] string? fields)
     {
-        if (!await _ticketManagementService.IsTicketExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _ticketManagementService.GetTicket(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.ticket);
@@ -66,16 +61,11 @@ public class TicketController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTicket(int id, UpdateTicketDto ticket)
     {
-        if (id != ticket.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _ticketManagementService.UpdateTicket(ticket);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.ticket);
@@ -84,16 +74,11 @@ public class TicketController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTicket(int id)
     {
-        if (!await _ticketManagementService.IsTicketExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _ticketManagementService.DeleteTicket(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

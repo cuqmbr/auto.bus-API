@@ -24,7 +24,7 @@ public class StateController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetState), new {id = result.state.Id}, result.state);
@@ -37,7 +37,7 @@ public class StateController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class StateController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetState(int id, [FromQuery] string? fields)
     {
-        if (!await _stateManagementService.IsStateExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _stateManagementService.GetState(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.state);
@@ -75,7 +70,7 @@ public class StateController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.state);
@@ -84,16 +79,11 @@ public class StateController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteState(int id)
     {
-        if (!await _stateManagementService.IsStateExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _stateManagementService.DeleteState(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

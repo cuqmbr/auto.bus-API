@@ -6,7 +6,6 @@ public class StateParameters : ParametersBase
     
     public StateParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

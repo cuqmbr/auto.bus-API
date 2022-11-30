@@ -25,7 +25,7 @@ public class VehicleEnrollmentController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetEnrollment), new {id = result.enrollment.Id}, result.enrollment);
@@ -38,7 +38,7 @@ public class VehicleEnrollmentController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -49,16 +49,11 @@ public class VehicleEnrollmentController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEnrollment(int id, [FromQuery] string? fields)
     {
-        if (!await _vehicleEnrollmentManagementService.IsEnrollmentExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _vehicleEnrollmentManagementService.GetEnrollment(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.enrollment);
@@ -67,16 +62,11 @@ public class VehicleEnrollmentController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateVehicle(int id, UpdateVehicleEnrollmentDto enrollment)
     {
-        if (id != enrollment.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _vehicleEnrollmentManagementService.UpdateEnrollment(enrollment);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.enrollment);
@@ -85,16 +75,11 @@ public class VehicleEnrollmentController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEnrollment(int id)
     {
-        if (!await _vehicleEnrollmentManagementService.IsEnrollmentExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _vehicleEnrollmentManagementService.DeleteEnrollment(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

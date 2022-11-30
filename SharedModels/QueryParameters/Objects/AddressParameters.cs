@@ -6,7 +6,6 @@ public class AddressParameters : ParametersBase
     
     public AddressParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

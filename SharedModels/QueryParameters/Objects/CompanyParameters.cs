@@ -6,7 +6,6 @@ public class CompanyParameters : ParametersBase
     
     public CompanyParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
 

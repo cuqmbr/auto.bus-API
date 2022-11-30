@@ -105,41 +105,20 @@ builder.Services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmen
 builder.Services.AddScoped<IRouteManagementService, RouteManagementService>();
 builder.Services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 
-builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-builder.Services.AddScoped<IReportService, ReportService>();
-
-builder.Services.AddScoped<ISortHelper<Country>, SortHelper<Country>>();
-builder.Services.AddScoped<ISortHelper<State>, SortHelper<State>>();
-builder.Services.AddScoped<ISortHelper<City>, SortHelper<City>>();
-builder.Services.AddScoped<ISortHelper<Address>, SortHelper<Address>>();
-builder.Services.AddScoped<ISortHelper<Ticket>, SortHelper<Ticket>>();
-builder.Services.AddScoped<ISortHelper<Review>, SortHelper<Review>>();
-builder.Services.AddScoped<ISortHelper<Company>, SortHelper<Company>>();
-builder.Services.AddScoped<ISortHelper<Vehicle>, SortHelper<Vehicle>>();
-builder.Services.AddScoped<ISortHelper<VehicleEnrollment>, SortHelper<VehicleEnrollment>>();
-builder.Services.AddScoped<ISortHelper<Route>, SortHelper<Route>>();
-builder.Services.AddScoped<ISortHelper<RouteAddress>, SortHelper<RouteAddress>>();
-
-builder.Services.AddScoped<IDataShaper<User>, DataShaper<User>>();
-builder.Services.AddScoped<IDataShaper<Country>, DataShaper<Country>>();
-builder.Services.AddScoped<IDataShaper<State>, DataShaper<State>>();
-builder.Services.AddScoped<IDataShaper<City>, DataShaper<City>>();
-builder.Services.AddScoped<IDataShaper<Address>, DataShaper<Address>>();
-builder.Services.AddScoped<IDataShaper<Ticket>, DataShaper<Ticket>>();
-builder.Services.AddScoped<IDataShaper<Review>, DataShaper<Review>>();
-builder.Services.AddScoped<IDataShaper<Company>, DataShaper<Company>>();
-builder.Services.AddScoped<IDataShaper<Vehicle>, DataShaper<Vehicle>>();
-builder.Services.AddScoped<IDataShaper<VehicleEnrollment>, DataShaper<VehicleEnrollment>>();
-builder.Services.AddScoped<IDataShaper<Route>, DataShaper<Route>>();
-builder.Services.AddScoped<IDataShaper<RouteAddress>, DataShaper<RouteAddress>>();
-
 builder.Services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
 
-builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
-builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
+builder.Services.AddScoped<IDataShaper<CountryDto>, DataShaper<CountryDto>>();
+builder.Services.AddScoped<IDataShaper<StateDto>, DataShaper<StateDto>>();
+builder.Services.AddScoped<IDataShaper<CityDto>, DataShaper<CityDto>>();
 builder.Services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
+builder.Services.AddScoped<IDataShaper<TicketDto>, DataShaper<TicketDto>>();
+builder.Services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
+builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
+builder.Services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
+builder.Services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
 builder.Services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
 builder.Services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
+builder.Services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
 
 builder.Services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
 

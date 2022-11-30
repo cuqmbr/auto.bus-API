@@ -24,7 +24,7 @@ public class AddressController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetAddress), new {id = result.address.Id}, result.address);
@@ -37,7 +37,7 @@ public class AddressController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class AddressController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetAddress(int id, [FromQuery] string? fields)
     {
-        if (!await _addressManagementService.IsAddressExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _addressManagementService.GetAddress(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.address);
@@ -66,16 +61,11 @@ public class AddressController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAddress(int id, UpdateAddressDto address)
     {
-        if (id != address.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _addressManagementService.UpdateAddress(address);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.address);
@@ -84,16 +74,11 @@ public class AddressController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAddress(int id)
     {
-        if (!await _addressManagementService.IsAddressExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _addressManagementService.DeleteAddress(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

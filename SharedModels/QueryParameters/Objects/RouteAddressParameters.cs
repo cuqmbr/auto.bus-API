@@ -7,7 +7,6 @@ public class RouteAddressParameters : ParametersBase
     
     public RouteAddressParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

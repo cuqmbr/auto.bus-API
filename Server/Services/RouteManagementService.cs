@@ -35,14 +35,14 @@ public class RouteManagementService : IRouteManagementService
         _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, RouteDto route)> AddRoute(CreateRouteDto createRouteDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, RouteDto route)> AddRoute(CreateRouteDto createRouteDto)
     {
         var route = _mapper.Map<Route>(createRouteDto);
     
         await _dbContext.Routes.AddAsync(route);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<RouteDto>(route));
+        return (true, null, _mapper.Map<RouteDto>(route));
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, RouteWithAddressesDto route)> AddRouteWithAddresses(CreateRouteWithAddressesDto createRouteWithAddressesDto)
@@ -56,7 +56,7 @@ public class RouteManagementService : IRouteManagementService
 
             if (dbAddress == null)
             {
-                return (false, new BadRequestObjectResult($"Address with Id = {routeAddress.AddressId} doesn't exist"), null!);
+                return (false, new BadRequestObjectResult($"Address with Id {routeAddress.AddressId} doesn't exist"), null!);
             }
             
             routeAddress.Address = dbAddress;
@@ -68,7 +68,7 @@ public class RouteManagementService : IRouteManagementService
         return (true, null, _mapper.Map<RouteWithAddressesDto>(route));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<ExpandoObject> routes,
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> routes,
             PagingMetadata<ExpandoObject> pagingMetadata)> GetRoutes(RouteParameters parameters)
     {
         var dbRoutes = _dbContext.Routes
@@ -83,20 +83,16 @@ public class RouteManagementService : IRouteManagementService
         try
         {
             shapedData = _routeSortHelper.ApplySort(shapedData, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbRoutes.Any();
         }
         catch (Exception e)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null, null)!;
         }
         
         var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
             parameters.PageSize);
         
-        return (true, "", shapedData, pagingMetadata);
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllRouteFields(ref IQueryable<Route> route,
             string? search)
@@ -213,16 +209,16 @@ public class RouteManagementService : IRouteManagementService
         }
     }
     
-    public async Task<(bool isSucceed, string message, ExpandoObject route)> GetRoute(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject route)> GetRoute(int id, string? fields)
     {
-        var dbRoute = await _dbContext.Routes.Where(r => r.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbRoute == null)
+        if (!await IsRouteExists(id))
         {
-            return (false, $"Route doesn't exist", null)!;
+            return (false, new NotFoundResult(), null)!;
         }
         
+        var dbRoute = await _dbContext.Routes.Where(r => r.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = RouteParameters.DefaultFields;
@@ -231,33 +227,33 @@ public class RouteManagementService : IRouteManagementService
         var routeDto = _mapper.Map<RouteDto>(dbRoute);
         var shapedRouteData = _routeDataShaper.ShapeData(routeDto, fields);
 
-        return (true, "", shapedRouteData);
+        return (true, null, shapedRouteData);
     }
     
-    public async Task<(bool isSucceed, string message, ExpandoObject route)> GetRouteWithAddresses(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject route)> GetRouteWithAddresses(int id, string? fields)
     {
+        if (!await IsRouteExists(id))
+        {
+            return (false, new NotFoundResult(), null)!;
+        }
+        
         var dbRoute = await _dbContext.Routes.Where(r => r.Id == id)
             .Include(r => r.RouteAddresses).ThenInclude(ra => ra.Address)
             .ThenInclude(a => a.City).ThenInclude(c => c.State)
-            .ThenInclude(s => s.Country).FirstOrDefaultAsync();
+            .ThenInclude(s => s.Country).FirstAsync();
 
-        if (dbRoute == null)
-        {
-            return (false, $"Route doesn't exist", null)!;
-        }
-        
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = RouteWithAddressesParameters.DefaultFields;
         }
         
         var routeDto = _mapper.Map<RouteWithAddressesDto>(dbRoute);
-        var shapedRouteData = _routeDataShaper.ShapeData(routeDto, fields);
+        var shapedData = _routeDataShaper.ShapeData(routeDto, fields);
 
-        return (true, "", shapedRouteData);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateRouteDto route)> UpdateRoute(UpdateRouteDto updateRouteDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, UpdateRouteDto route)> UpdateRoute(UpdateRouteDto updateRouteDto)
     {
         var route = _mapper.Map<Route>(updateRouteDto);
         _dbContext.Entry(route).State = EntityState.Modified;
@@ -270,30 +266,28 @@ public class RouteManagementService : IRouteManagementService
         {
             if (!await IsRouteExists(updateRouteDto.Id))
             {
-                return (false, $"Route with id:{updateRouteDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null)!;
             }
-            
-            throw;
         }
 
-        var dbRoute = await _dbContext.Routes.FirstOrDefaultAsync(r => r.Id == route.Id);
+        var dbRoute = await _dbContext.Routes.FirstAsync(r => r.Id == route.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateRouteDto>(dbRoute));
+        return (true, null, _mapper.Map<UpdateRouteDto>(dbRoute));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteRoute(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteRoute(int id)
     {
         var dbRoute = await _dbContext.Routes.FirstOrDefaultAsync(r => r.Id == id);
-    
+
         if (dbRoute == null)
         {
-            return (false, $"Route with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
-    
+       
         _dbContext.Routes.Remove(dbRoute);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsRouteExists(int id)

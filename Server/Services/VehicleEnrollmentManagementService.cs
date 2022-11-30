@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,31 +15,33 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<VehicleEnrollment> _enrollmentSortHelper;
-    private readonly IDataShaper<VehicleEnrollment> _enrollmentDataShaper;
+    private readonly ISortHelper<ExpandoObject> _enrollmentSortHelper;
+    private readonly IDataShaper<VehicleEnrollmentDto> _enrollmentDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public VehicleEnrollmentManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<VehicleEnrollment> enrollmentSortHelper, 
-        IDataShaper<VehicleEnrollment> enrollmentDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> enrollmentSortHelper, 
+        IDataShaper<VehicleEnrollmentDto> enrollmentDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _enrollmentSortHelper = enrollmentSortHelper;
         _enrollmentDataShaper = enrollmentDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, VehicleEnrollmentDto enrollment)> AddEnrollment(CreateVehicleEnrollmentDto createEnrollmentDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentDto enrollment)> AddEnrollment(CreateVehicleEnrollmentDto createEnrollmentDto)
     {
         var enrollment = _mapper.Map<VehicleEnrollment>(createEnrollmentDto);
     
         await _dbContext.VehicleEnrollments.AddAsync(enrollment);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<VehicleEnrollmentDto>(enrollment));
+        return (true, null, _mapper.Map<VehicleEnrollmentDto>(enrollment));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<VehicleEnrollmentDto> enrollments,
-            PagingMetadata<VehicleEnrollment> pagingMetadata)> GetEnrollments(VehicleEnrollmentParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> enrollments,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetEnrollments(VehicleEnrollmentParameters parameters)
     {
         var dbEnrollments = _dbContext.VehicleEnrollments
             .AsQueryable();
@@ -50,26 +54,22 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         FilterByEnrollmentDelayedValue(ref dbEnrollments, parameters.IsDelayed);
         FilterByEnrollmentCancelledValue(ref dbEnrollments, parameters.IsCanceled);
 
+        var enrollmentDtos = _mapper.ProjectTo<VehicleEnrollmentDto>(dbEnrollments);
+        var shapedData = _enrollmentDataShaper.ShapeData(enrollmentDtos, parameters.Fields).AsQueryable();
+        
         try
         {
-            dbEnrollments = _enrollmentSortHelper.ApplySort(dbEnrollments, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbEnrollments.Any();
+            shapedData = _enrollmentSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbEnrollments, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedEnrollmentsData = _enrollmentDataShaper.ShapeData(dbEnrollments, parameters.Fields);
-        var enrollmentDtos = shapedEnrollmentsData.ToList().ConvertAll(e => _mapper.Map<VehicleEnrollmentDto>(e));
         
-        return (true, "", enrollmentDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllEnrollmentFields(ref IQueryable<VehicleEnrollment> enrollment,
             string? search)
@@ -141,43 +141,30 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
             
             enrollments = enrollments.Where(e => e.IsCanceled == isCancelled);
         }
-
-        PagingMetadata<VehicleEnrollment> ApplyPaging(ref IQueryable<VehicleEnrollment> enrollments,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<VehicleEnrollment>(enrollments,
-                pageNumber, pageSize);
-            
-            enrollments = enrollments
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, VehicleEnrollmentDto enrollment)> GetEnrollment(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject enrollment)> GetEnrollment(int id, string? fields)
     {
-        var dbEnrollment = await _dbContext.VehicleEnrollments.Where(e => e.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbEnrollment == null)
+        if (!await IsEnrollmentExists(id))
         {
-            return (false, $"Enrollment doesn't exist", null)!;
+            return (false, new NotFoundResult(), null!);
         }
         
+        var dbEnrollment = await _dbContext.VehicleEnrollments.Where(e => e.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = VehicleEnrollmentParameters.DefaultFields;
         }
         
-        var shapedEnrollmentData = _enrollmentDataShaper.ShapeData(dbEnrollment, fields);
-        var enrollmentDto = _mapper.Map<VehicleEnrollmentDto>(shapedEnrollmentData);
+        var enrollmentDto = _mapper.Map<VehicleEnrollmentDto>(dbEnrollment);
+        var shapedData = _enrollmentDataShaper.ShapeData(enrollmentDto, fields);
 
-        return (true, "", enrollmentDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateVehicleEnrollmentDto enrollment)> UpdateEnrollment(UpdateVehicleEnrollmentDto updateEnrollmentDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentDto enrollment)> UpdateEnrollment(UpdateVehicleEnrollmentDto updateEnrollmentDto)
     {
         var enrollment = _mapper.Map<VehicleEnrollment>(updateEnrollmentDto);
         _dbContext.Entry(enrollment).State = EntityState.Modified;
@@ -190,30 +177,30 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         {
             if (!await IsEnrollmentExists(updateEnrollmentDto.Id))
             {
-                return (false, $"Enrollment with id:{updateEnrollmentDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
             
             throw;
         }
 
-        var dbEnrollment = await _dbContext.VehicleEnrollments.FirstOrDefaultAsync(e => e.Id == enrollment.Id);
+        var dbEnrollment = await _dbContext.VehicleEnrollments.FirstAsync(e => e.Id == enrollment.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateVehicleEnrollmentDto>(dbEnrollment));
+        return (true, null, _mapper.Map<VehicleEnrollmentDto>(dbEnrollment));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteEnrollment(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteEnrollment(int id)
     {
         var dbEnrollment = await _dbContext.VehicleEnrollments.FirstOrDefaultAsync(e => e.Id == id);
     
         if (dbEnrollment == null)
         {
-            return (false, $"Enrollment with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
     
         _dbContext.VehicleEnrollments.Remove(dbEnrollment);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsEnrollmentExists(int id)

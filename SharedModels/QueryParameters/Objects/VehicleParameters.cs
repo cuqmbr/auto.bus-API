@@ -7,7 +7,6 @@ public class VehicleParameters : ParametersBase
     
     public VehicleParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

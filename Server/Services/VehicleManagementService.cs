@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,83 +15,53 @@ public class VehicleManagementService : IVehicleManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Vehicle> _vehicleSortHelper;
-    private readonly IDataShaper<Vehicle> _vehicleDataShaper;
+    private readonly ISortHelper<ExpandoObject> _vehicleSortHelper;
+    private readonly IDataShaper<VehicleDto> _vehicleDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public VehicleManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Vehicle> vehicleSortHelper, 
-        IDataShaper<Vehicle> vehicleDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> vehicleSortHelper, 
+        IDataShaper<VehicleDto> vehicleDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _vehicleSortHelper = vehicleSortHelper;
         _vehicleDataShaper = vehicleDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, VehicleDto vehicle)> AddVehicle(CreateVehicleDto createVehicleDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, VehicleDto vehicle)> AddVehicle(CreateVehicleDto createVehicleDto)
     {
         var vehicle = _mapper.Map<Vehicle>(createVehicleDto);
     
         await _dbContext.Vehicles.AddAsync(vehicle);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<VehicleDto>(vehicle));
+        return (true, null, _mapper.Map<VehicleDto>(vehicle));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<VehicleDto> vehicles,
-            PagingMetadata<Vehicle> pagingMetadata)> GetVehicles(VehicleParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> vehicles,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetVehicles(VehicleParameters parameters)
     {
         var dbVehicles = _dbContext.Vehicles
             .AsQueryable();
 
-        bool a = dbVehicles.Any();
-        
-        SearchByAllVehicleFields(ref dbVehicles, parameters.Search);
-        a = dbVehicles.Any();
-        FilterByVehicleNumber(ref dbVehicles, parameters.Number);
-        a = dbVehicles.Any();
-        FilterByVehicleType(ref dbVehicles, parameters.Type);
-        a = dbVehicles.Any();
-        FilterByVehicleCapacity(ref dbVehicles, parameters.FromCapacity,
-            parameters.ToCapacity);
-        a = dbVehicles.Any();
-        FilterByVehicleClimateControlAvailability(ref dbVehicles, parameters.HasClimateControl);
-        a = dbVehicles.Any();
-        FilterByVehicleWiFiAvailability(ref dbVehicles, parameters.HasWiFi);
-        a = dbVehicles.Any();
-        FilterByVehicleWCAvailability(ref dbVehicles, parameters.HasWC);
-        a = dbVehicles.Any();
-        FilterByStewardessAvailability(ref dbVehicles, parameters.HasStewardess);
-        a = dbVehicles.Any();
-        FilterByVehicleTVAvailability(ref dbVehicles, parameters.HasTV);
-        a = dbVehicles.Any();
-        FilterByVehicleOutletAvailability(ref dbVehicles, parameters.HasOutlet);
-        a = dbVehicles.Any();
-        FilterByVehicleBeltsAvailability(ref dbVehicles, parameters.HasBelts);
-        a = dbVehicles.Any();
-        FilterByVehicleCompanyId(ref dbVehicles, parameters.CompanyId);
-        a = dbVehicles.Any();
+        var vehicleDtos = _mapper.ProjectTo<VehicleDto>(dbVehicles);
+        var shapedData = _vehicleDataShaper.ShapeData(vehicleDtos, parameters.Fields).AsQueryable();
         
         try
         {
-            dbVehicles = _vehicleSortHelper.ApplySort(dbVehicles, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbVehicles.Any();
+            shapedData = _vehicleSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbVehicles, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedVehiclesData = _vehicleDataShaper.ShapeData(dbVehicles, parameters.Fields);
-        var vehicleDtos = shapedVehiclesData.ToList().ConvertAll(v => _mapper.Map<VehicleDto>(v));
         
-        return (true, "", vehicleDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllVehicleFields(ref IQueryable<Vehicle> vehicle,
             string? search)
@@ -225,43 +197,31 @@ public class VehicleManagementService : IVehicleManagementService
 
             vehicles = vehicles.Where(v => v.CompanyId == companyId);
         }
-
-        PagingMetadata<Vehicle> ApplyPaging(ref IQueryable<Vehicle> vehicles,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<Vehicle>(vehicles,
-                pageNumber, pageSize);
-            
-            vehicles = vehicles
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
+        
     }
     
-    public async Task<(bool isSucceed, string message, VehicleDto vehicle)> GetVehicle(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject vehicle)> GetVehicle(int id, string? fields)
     {
-        var dbVehicle = await _dbContext.Vehicles.Where(v => v.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbVehicle == null)
+        if (!await IsVehicleExists(id))
         {
-            return (false, $"Vehicle doesn't exist", null)!;
+            return (false, new NotFoundResult(), null!);
         }
         
+        var dbVehicle = await _dbContext.Vehicles.Where(v => v.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = VehicleParameters.DefaultFields;
         }
         
-        var shapedVehicleData = _vehicleDataShaper.ShapeData(dbVehicle, fields);
-        var vehicleDto = _mapper.Map<VehicleDto>(shapedVehicleData);
+        var vehicleDto = _mapper.Map<VehicleDto>(dbVehicle);
+        var shapedData = _vehicleDataShaper.ShapeData(vehicleDto, fields);
 
-        return (true, "", vehicleDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateVehicleDto vehicle)> UpdateVehicle(UpdateVehicleDto updateVehicleDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, VehicleDto vehicle)> UpdateVehicle(UpdateVehicleDto updateVehicleDto)
     {
         var vehicle = _mapper.Map<Vehicle>(updateVehicleDto);
         _dbContext.Entry(vehicle).State = EntityState.Modified;
@@ -274,30 +234,30 @@ public class VehicleManagementService : IVehicleManagementService
         {
             if (!await IsVehicleExists(updateVehicleDto.Id))
             {
-                return (false, $"Vehicle with id:{updateVehicleDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
             
             throw;
         }
 
-        var dbVehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicle.Id);
+        var dbVehicle = await _dbContext.Vehicles.FirstAsync(v => v.Id == vehicle.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateVehicleDto>(dbVehicle));
+        return (true, null, _mapper.Map<VehicleDto>(dbVehicle));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteVehicle(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteVehicle(int id)
     {
         var dbVehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
     
         if (dbVehicle == null)
         {
-            return (false, $"Vehicle with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
     
         _dbContext.Vehicles.Remove(dbVehicle);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsVehicleExists(int id)

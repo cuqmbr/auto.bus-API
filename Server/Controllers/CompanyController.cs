@@ -24,7 +24,7 @@ public class CompanyController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetCompany), new {id = result.company.Id}, result.company);
@@ -37,7 +37,7 @@ public class CompanyController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class CompanyController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCompany(int id, [FromQuery] string? fields)
     {
-        if (!await _companyManagementService.IsCompanyExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _companyManagementService.GetCompany(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.company);
@@ -66,16 +61,11 @@ public class CompanyController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCompany(int id, UpdateCompanyDto company)
     {
-        if (id != company.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _companyManagementService.UpdateCompany(company);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.company);
@@ -84,16 +74,11 @@ public class CompanyController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCompany(int id)
     {
-        if (!await _companyManagementService.IsCompanyExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _companyManagementService.DeleteCompany(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

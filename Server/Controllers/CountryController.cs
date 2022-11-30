@@ -24,7 +24,7 @@ public class CountryController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetCountry), new {id = result.country.Id}, result.country);
@@ -37,7 +37,7 @@ public class CountryController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class CountryController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCountry(int id, [FromQuery] string? fields)
     {
-        if (!await _countryManagementService.IsCountryExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _countryManagementService.GetCountry(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.country);
@@ -66,16 +61,11 @@ public class CountryController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCountry(int id, UpdateCountryDto country)
     {
-        if (id != country.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _countryManagementService.UpdateCountry(country);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.country);
@@ -84,16 +74,11 @@ public class CountryController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCountry(int id)
     {
-        if (!await _countryManagementService.IsCountryExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _countryManagementService.DeleteCountry(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

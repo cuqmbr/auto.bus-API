@@ -6,7 +6,6 @@ public class RouteParameters : ParametersBase
     
     public RouteParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

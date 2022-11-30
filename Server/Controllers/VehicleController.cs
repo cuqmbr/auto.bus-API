@@ -24,7 +24,7 @@ public class VehicleController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetVehicle), new {id = result.vehicle.Id}, result.vehicle);
@@ -37,7 +37,7 @@ public class VehicleController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class VehicleController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetVehicle(int id, [FromQuery] string? fields)
     {
-        if (!await _vehicleManagementService.IsVehicleExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _vehicleManagementService.GetVehicle(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.vehicle);
@@ -66,16 +61,11 @@ public class VehicleController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateVehicle(int id, UpdateVehicleDto vehicle)
     {
-        if (id != vehicle.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _vehicleManagementService.UpdateVehicle(vehicle);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.vehicle);
@@ -84,16 +74,11 @@ public class VehicleController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteVehicle(int id)
     {
-        if (!await _vehicleManagementService.IsVehicleExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _vehicleManagementService.DeleteVehicle(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

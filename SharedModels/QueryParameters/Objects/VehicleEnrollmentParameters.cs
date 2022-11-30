@@ -7,7 +7,6 @@ public class VehicleEnrollmentParameters : ParametersBase
     
     public VehicleEnrollmentParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

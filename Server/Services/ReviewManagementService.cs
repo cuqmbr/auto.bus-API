@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,31 +15,33 @@ public class ReviewManagementService : IReviewManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Review> _reviewSortHelper;
-    private readonly IDataShaper<Review> _reviewDataShaper;
+    private readonly ISortHelper<ExpandoObject> _reviewSortHelper;
+    private readonly IDataShaper<ReviewDto> _reviewDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public ReviewManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Review> reviewSortHelper, 
-        IDataShaper<Review> reviewDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> reviewSortHelper, 
+        IDataShaper<ReviewDto> reviewDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _reviewSortHelper = reviewSortHelper;
         _reviewDataShaper = reviewDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, ReviewDto review)> AddReview(CreateReviewDto createReviewDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ReviewDto review)> AddReview(CreateReviewDto createReviewDto)
     {
         var review = _mapper.Map<Review>(createReviewDto);
     
         await _dbContext.Reviews.AddAsync(review);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<ReviewDto>(review));
+        return (true, null, _mapper.Map<ReviewDto>(review));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<ReviewDto> reviews,
-            PagingMetadata<Review> pagingMetadata)> GetReviews(ReviewParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> reviews,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetReviews(ReviewParameters parameters)
     {
         var dbReviews = _dbContext.Reviews
             .AsQueryable();
@@ -46,26 +50,22 @@ public class ReviewManagementService : IReviewManagementService
         FilterByReviewComment(ref dbReviews, parameters.Comment);
         FilterByReviewUserId(ref dbReviews, parameters.UserId);
 
+        var reviewDtos = _mapper.ProjectTo<ReviewDto>(dbReviews);
+        var shapedData = _reviewDataShaper.ShapeData(reviewDtos, parameters.Fields).AsQueryable();
+        
         try
         {
-            dbReviews = _reviewSortHelper.ApplySort(dbReviews, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbReviews.Any();
+            shapedData = _reviewSortHelper.ApplySort(shapedData, parameters.Sort);
         }
         catch (Exception e)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbReviews, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedReviewsData = _reviewDataShaper.ShapeData(dbReviews, parameters.Fields);
-        var reviewDtos = shapedReviewsData.ToList().ConvertAll(r => _mapper.Map<ReviewDto>(r));
         
-        return (true, "", reviewDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void FilterByReviewRating(ref IQueryable<Review> reviews,
             int? fromRating, int? toRating)
@@ -103,43 +103,30 @@ public class ReviewManagementService : IReviewManagementService
             reviews = reviews.Where(r =>
                 r.UserId.Contains(userId.ToLower()));
         }
-
-        PagingMetadata<Review> ApplyPaging(ref IQueryable<Review> reviews,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<Review>(reviews,
-                pageNumber, pageSize);
-            
-            reviews = reviews
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, ReviewDto review)> GetReview(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject review)> GetReview(int id, string? fields)
     {
-        var dbReview = await _dbContext.Reviews.Where(r => r.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbReview == null)
+        if (!await IsReviewExists(id))
         {
-            return (false, $"Review doesn't exist", null)!;
+            return (false, new NotFoundResult(), null!);
         }
         
+        var dbReview = await _dbContext.Reviews.Where(r => r.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = ReviewParameters.DefaultFields;
         }
         
-        var shapedReviewData = _reviewDataShaper.ShapeData(dbReview, fields);
-        var reviewDto = _mapper.Map<ReviewDto>(shapedReviewData);
+        var reviewDto = _mapper.Map<ReviewDto>(dbReview);
+        var shapedData = _reviewDataShaper.ShapeData(reviewDto, fields);
 
-        return (true, "", reviewDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateReviewDto review)> UpdateReview(UpdateReviewDto updateReviewDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ReviewDto review)> UpdateReview(UpdateReviewDto updateReviewDto)
     {
         var review = _mapper.Map<Review>(updateReviewDto);
         _dbContext.Entry(review).State = EntityState.Modified;
@@ -152,30 +139,28 @@ public class ReviewManagementService : IReviewManagementService
         {
             if (!await IsReviewExists(updateReviewDto.Id))
             {
-                return (false, $"Review with id:{updateReviewDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
-            
-            throw;
         }
 
-        var dbReview = await _dbContext.Reviews.FirstOrDefaultAsync(r => r.Id == review.Id);
+        var dbReview = await _dbContext.Reviews.FirstAsync(r => r.Id == review.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateReviewDto>(dbReview));
+        return (true, null, _mapper.Map<ReviewDto>(dbReview));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteReview(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteReview(int id)
     {
         var dbReview = await _dbContext.Reviews.FirstOrDefaultAsync(r => r.Id == id);
     
         if (dbReview == null)
         {
-            return (false, $"Review with id:{id} doesn't exist");
+            return (false,new NotFoundResult());
         }
     
         _dbContext.Reviews.Remove(dbReview);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsReviewExists(int id)

@@ -1,4 +1,5 @@
-using Server.Models;
+using System.Dynamic;
+using Microsoft.AspNetCore.Mvc;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
@@ -7,11 +8,11 @@ namespace Server.Services;
 
 public interface IVehicleEnrollmentManagementService
 {
-    Task<(bool isSucceed, string message, VehicleEnrollmentDto enrollment)> AddEnrollment(CreateVehicleEnrollmentDto createEnrollmentDto);
-    Task<(bool isSucceed, string message, IEnumerable<VehicleEnrollmentDto> enrollments,
-        PagingMetadata<VehicleEnrollment> pagingMetadata)> GetEnrollments(VehicleEnrollmentParameters parameters); 
-    Task<(bool isSucceed, string message, VehicleEnrollmentDto enrollment)> GetEnrollment(int id, string? fields);
-    Task<(bool isSucceed, string message, UpdateVehicleEnrollmentDto enrollment)> UpdateEnrollment(UpdateVehicleEnrollmentDto updateEnrollmentDto);
-    Task<(bool isSucceed, string message)> DeleteEnrollment(int id);
+    Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentDto enrollment)> AddEnrollment(CreateVehicleEnrollmentDto createEnrollmentDto);
+    Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> enrollments,
+        PagingMetadata<ExpandoObject> pagingMetadata)> GetEnrollments(VehicleEnrollmentParameters parameters); 
+    Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject enrollment)> GetEnrollment(int id, string? fields);
+    Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentDto enrollment)> UpdateEnrollment(UpdateVehicleEnrollmentDto updateEnrollmentDto);
+    Task<(bool isSucceed, IActionResult? actionResult)> DeleteEnrollment(int id);
     Task<bool> IsEnrollmentExists(int id);
 }

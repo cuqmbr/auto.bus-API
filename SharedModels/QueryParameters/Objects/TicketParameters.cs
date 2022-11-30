@@ -6,7 +6,6 @@ public class TicketParameters : ParametersBase
     
     public TicketParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

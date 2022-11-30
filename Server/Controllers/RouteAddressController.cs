@@ -24,7 +24,7 @@ public class RouteAddressController : ControllerBase
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return CreatedAtAction(nameof(GetRouteAddress), new {id = result.routeAddress.Id}, result.routeAddress);
@@ -37,7 +37,7 @@ public class RouteAddressController : ControllerBase
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -48,16 +48,11 @@ public class RouteAddressController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetRouteAddress(int id, [FromQuery] string? fields)
     {
-        if (!await _routeAddressManagementService.IsRouteAddressExists(id))
-        {
-            return NotFound();
-        }
-
         var result = await _routeAddressManagementService.GetRouteAddress(id, fields);
 
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
 
         return Ok(result.routeAddress);
@@ -66,16 +61,11 @@ public class RouteAddressController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateRouteAddress(int id, UpdateRouteAddressDto routeAddress)
     {
-        if (id != routeAddress.Id)
-        {
-            return BadRequest();
-        }
-        
         var result = await _routeAddressManagementService.UpdateRouteAddress(routeAddress);
     
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return Ok(result.routeAddress);
@@ -84,16 +74,11 @@ public class RouteAddressController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRouteAddress(int id)
     {
-        if (!await _routeAddressManagementService.IsRouteAddressExists(id))
-        {
-            return NotFound();
-        }
-        
         var result = await _routeAddressManagementService.DeleteRouteAddress(id);
         
         if (!result.isSucceed)
         {
-            return BadRequest(result.message);
+            return result.actionResult;
         }
     
         return NoContent();

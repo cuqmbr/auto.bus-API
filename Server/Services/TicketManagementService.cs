@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,31 +15,33 @@ public class TicketManagementService : ITicketManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Ticket> _ticketSortHelper;
-    private readonly IDataShaper<Ticket> _ticketDataShaper;
+    private readonly ISortHelper<ExpandoObject> _ticketSortHelper;
+    private readonly IDataShaper<TicketDto> _ticketDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public TicketManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Ticket> ticketSortHelper, 
-        IDataShaper<Ticket> ticketDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> ticketSortHelper, 
+        IDataShaper<TicketDto> ticketDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _ticketSortHelper = ticketSortHelper;
         _ticketDataShaper = ticketDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, TicketDto ticket)> AddTicket(CreateTicketDto createTicketDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, TicketDto ticket)> AddTicket(CreateTicketDto createTicketDto)
     {
         var ticket = _mapper.Map<Ticket>(createTicketDto);
     
         await _dbContext.Tickets.AddAsync(ticket);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<TicketDto>(ticket));
+        return (true, null, _mapper.Map<TicketDto>(ticket));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<TicketDto> tickets,
-            PagingMetadata<Ticket> pagingMetadata)> GetTickets(TicketParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> tickets,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetTickets(TicketParameters parameters)
     {
         var dbTickets = _dbContext.Tickets
             .AsQueryable();
@@ -46,27 +50,23 @@ public class TicketManagementService : ITicketManagementService
             parameters.ToPurchaseDateTimeUtc);
         FilterByTicketReturnedState(ref dbTickets, parameters.IsReturned);
         FilterByTicketUserId(ref dbTickets, parameters.UserId);
-
+        
+        var ticketDtos = _mapper.ProjectTo<TicketDto>(dbTickets);
+        var shapedData = _ticketDataShaper.ShapeData(ticketDtos, parameters.Fields).AsQueryable();
+        
         try
         {
-            dbTickets = _ticketSortHelper.ApplySort(dbTickets, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbTickets.Any();
+            shapedData = _ticketSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
-
-        var pagingMetadata = ApplyPaging(ref dbTickets, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedTicketsData = _ticketDataShaper.ShapeData(dbTickets, parameters.Fields);
-        var ticketDtos = shapedTicketsData.ToList().ConvertAll(t => _mapper.Map<TicketDto>(t));
         
-        return (true, "", ticketDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void FilterByTicketPurchaseDateTime(ref IQueryable<Ticket> tickets,
             DateTime? fromDateTime, DateTime? toDateTime)
@@ -104,43 +104,30 @@ public class TicketManagementService : ITicketManagementService
             // tickets = tickets.Where(t =>
             //     t.UserId.ToLower().Contains(userId.ToLower()));
         }
-
-        PagingMetadata<Ticket> ApplyPaging(ref IQueryable<Ticket> tickets,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<Ticket>(tickets,
-                pageNumber, pageSize);
-            
-            tickets = tickets
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, TicketDto ticket)> GetTicket(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject ticket)> GetTicket(int id, string? fields)
     {
-        var dbTicket = await _dbContext.Tickets.Where(t => t.Id == id)
-            .FirstOrDefaultAsync();
-
-        if (dbTicket == null)
+        if (!await IsTicketExists(id))
         {
-            return (false, $"Ticket doesn't exist", null)!;
+            return (false, new NotFoundResult(), null!);
         }
         
+        var dbTicket = await _dbContext.Tickets.Where(t => t.Id == id)
+            .FirstAsync();
+
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = TicketParameters.DefaultFields;
         }
         
-        var shapedTicketData = _ticketDataShaper.ShapeData(dbTicket, fields);
-        var ticketDto = _mapper.Map<TicketDto>(shapedTicketData);
+        var ticketDto = _mapper.Map<TicketDto>(dbTicket);
+        var shapedData = _ticketDataShaper.ShapeData(ticketDto, fields);
 
-        return (true, "", ticketDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateTicketDto ticket)> UpdateTicket(UpdateTicketDto updateTicketDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, TicketDto ticket)> UpdateTicket(UpdateTicketDto updateTicketDto)
     {
         var ticket = _mapper.Map<Ticket>(updateTicketDto);
         _dbContext.Entry(ticket).State = EntityState.Modified;
@@ -153,30 +140,28 @@ public class TicketManagementService : ITicketManagementService
         {
             if (!await IsTicketExists(updateTicketDto.Id))
             {
-                return (false, $"Ticket with id:{updateTicketDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
-            
-            throw;
         }
 
-        var dbTicket = await _dbContext.Tickets.FirstOrDefaultAsync(t => t.Id == ticket.Id);
+        var dbTicket = await _dbContext.Tickets.FirstAsync(t => t.Id == ticket.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateTicketDto>(dbTicket));
+        return (true, null, _mapper.Map<TicketDto>(dbTicket));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteTicket(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteTicket(int id)
     {
         var dbTicket = await _dbContext.Tickets.FirstOrDefaultAsync(t => t.Id == id);
     
         if (dbTicket == null)
         {
-            return (false, $"Ticket with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
     
         _dbContext.Tickets.Remove(dbTicket);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsTicketExists(int id)

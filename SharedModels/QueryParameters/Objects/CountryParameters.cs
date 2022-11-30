@@ -6,7 +6,6 @@ public class CountryParameters : ParametersBase
     
     public CountryParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

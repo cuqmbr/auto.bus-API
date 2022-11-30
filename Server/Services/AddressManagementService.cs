@@ -1,4 +1,6 @@
+using System.Dynamic;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
@@ -13,31 +15,33 @@ public class AddressManagementService : IAddressManagementService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly ISortHelper<Address> _addressSortHelper;
-    private readonly IDataShaper<Address> _addressDataShaper;
+    private readonly ISortHelper<ExpandoObject> _addressSortHelper;
+    private readonly IDataShaper<AddressDto> _addressDataShaper;
+    private readonly IPager<ExpandoObject> _pager;
 
     public AddressManagementService(ApplicationDbContext dbContext,
-        IMapper mapper, ISortHelper<Address> addressSortHelper, 
-        IDataShaper<Address> addressDataShaper)
+        IMapper mapper, ISortHelper<ExpandoObject> addressSortHelper, 
+        IDataShaper<AddressDto> addressDataShaper, IPager<ExpandoObject> pager)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _addressSortHelper = addressSortHelper;
         _addressDataShaper = addressDataShaper;
+        _pager = pager;
     }
 
-    public async Task<(bool isSucceed, string message, AddressDto address)> AddAddress(CreateAddressDto createAddressDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, AddressDto address)> AddAddress(CreateAddressDto createAddressDto)
     {
         var address = _mapper.Map<Address>(createAddressDto);
     
         await _dbContext.Addresses.AddAsync(address);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty, _mapper.Map<AddressDto>(address));
+        return (true, null, _mapper.Map<AddressDto>(address));
     }
 
-    public async Task<(bool isSucceed, string message, IEnumerable<AddressDto> addresses,
-            PagingMetadata<Address> pagingMetadata)> GetAddresses(AddressParameters parameters)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IEnumerable<ExpandoObject> addresses,
+            PagingMetadata<ExpandoObject> pagingMetadata)> GetAddresses(AddressParameters parameters)
     {
         var dbAddresses = _dbContext.Addresses.Include(a => a.City)
             .ThenInclude(c => c.State).ThenInclude(s => s.Country)
@@ -47,26 +51,23 @@ public class AddressManagementService : IAddressManagementService
         FilterByAddressName(ref dbAddresses, parameters.Name);
         FilterByCityId(ref dbAddresses, parameters.CityId);
 
+
+        var addressDtos = dbAddresses.ToList().ConvertAll(a => _mapper.Map<AddressDto>(a));
+        var shapedData = _addressDataShaper.ShapeData(addressDtos, parameters.Fields).AsQueryable();
+        
         try
         {
-            dbAddresses = _addressSortHelper.ApplySort(dbAddresses, parameters.Sort);
-            
-            // By calling Any() we will check if LINQ to Entities Query will be
-            // executed. If not it will throw an InvalidOperationException exception
-            var isExecuted = dbAddresses.Any();
+            shapedData = _addressSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, "Invalid sorting string", null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null, null)!;
         }
-
-        var pagingMetadata = ApplyPaging(ref dbAddresses, parameters.PageNumber,
-            parameters.PageSize);
-
-        var shapedAddressesData = _addressDataShaper.ShapeData(dbAddresses, parameters.Fields);
-        var addressDtos = shapedAddressesData.ToList().ConvertAll(a => _mapper.Map<AddressDto>(a));
         
-        return (true, "", addressDtos, pagingMetadata);
+        var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
+            parameters.PageSize);
+        
+        return (true, null, shapedData, pagingMetadata);
 
         void SearchByAllAddressFields(ref IQueryable<Address> addresses,
             string? search)
@@ -102,45 +103,32 @@ public class AddressManagementService : IAddressManagementService
             addresses = addresses.Where(a =>
                 a.Name.ToLower().Contains(addressName.Trim().ToLower()));
         }
-
-        PagingMetadata<Address> ApplyPaging(ref IQueryable<Address> addresses,
-            int pageNumber, int pageSize)
-        {
-            var metadata = new PagingMetadata<Address>(addresses,
-                pageNumber, pageSize);
-            
-            addresses = addresses
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            return metadata;
-        }
     }
     
-    public async Task<(bool isSucceed, string message, AddressDto address)> GetAddress(int id, string? fields)
+    public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject address)> GetAddress(int id, string? fields)
     {
+        if (!await IsAddressExists(id))
+        {
+            return (false, new NotFoundResult(), null!);
+        }
+        
         var dbAddress = await _dbContext.Addresses.Where(a => a.Id == id)
             .Include(a => a.City).ThenInclude(c => c.State)
             .ThenInclude(s => s.Country)
-            .FirstOrDefaultAsync();
+            .FirstAsync();
 
-        if (dbAddress == null)
-        {
-            return (false, $"Address doesn't exist", null)!;
-        }
-        
         if (String.IsNullOrWhiteSpace(fields))
         {
             fields = AddressParameters.DefaultFields;
         }
         
-        var shapedAddressData = _addressDataShaper.ShapeData(dbAddress, fields);
-        var addressDto = _mapper.Map<AddressDto>(shapedAddressData);
+        var addressDto = _mapper.Map<AddressDto>(dbAddress);
+        var shapedData = _addressDataShaper.ShapeData(addressDto, fields);
 
-        return (true, "", addressDto);
+        return (true, null, shapedData);
     }
 
-    public async Task<(bool isSucceed, string message, UpdateAddressDto address)> UpdateAddress(UpdateAddressDto updateAddressDto)
+    public async Task<(bool isSucceed, IActionResult? actionResult, AddressDto address)> UpdateAddress(UpdateAddressDto updateAddressDto)
     {
         var address = _mapper.Map<Address>(updateAddressDto);
         _dbContext.Entry(address).State = EntityState.Modified;
@@ -153,30 +141,28 @@ public class AddressManagementService : IAddressManagementService
         {
             if (!await IsAddressExists(updateAddressDto.Id))
             {
-                return (false, $"Address with id:{updateAddressDto.Id} doesn't exist", null)!;
+                return (false, new NotFoundResult(), null!);
             }
-            
-            throw;
         }
 
-        var dbAddress = await _dbContext.Addresses.FirstOrDefaultAsync(a => a.Id == address.Id);
+        var dbAddress = await _dbContext.Addresses.FirstAsync(a => a.Id == address.Id);
         
-        return (true, String.Empty, _mapper.Map<UpdateAddressDto>(dbAddress));
+        return (true, null, _mapper.Map<AddressDto>(dbAddress));
     }
 
-    public async Task<(bool isSucceed, string message)> DeleteAddress(int id)
+    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteAddress(int id)
     {
         var dbAddress = await _dbContext.Addresses.FirstOrDefaultAsync(a => a.Id == id);
-    
+
         if (dbAddress == null)
         {
-            return (false, $"Address with id:{id} doesn't exist");
+            return (false, new NotFoundResult());
         }
-    
+        
         _dbContext.Addresses.Remove(dbAddress);
         await _dbContext.SaveChangesAsync();
     
-        return (true, String.Empty);
+        return (true, null);
     }
 
     public async Task<bool> IsAddressExists(int id)

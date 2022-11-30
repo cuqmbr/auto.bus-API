@@ -6,7 +6,6 @@ public class ReviewParameters : ParametersBase
     
     public ReviewParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     

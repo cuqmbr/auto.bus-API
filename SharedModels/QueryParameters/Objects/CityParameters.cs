@@ -6,7 +6,6 @@ public class CityParameters : ParametersBase
     
     public CityParameters()
     {
-        Sort = "id";
         Fields = DefaultFields;
     }
     
