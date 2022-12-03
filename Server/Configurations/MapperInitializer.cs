@@ -46,10 +46,6 @@ public class MapperInitializer : Profile
         CreateMap<Route, CreateRouteWithAddressesDto>().ReverseMap();
         CreateMap<Route, RouteWithAddressesDto>().ReverseMap();
 
-
-
-
-
         CreateMap<Ticket, TicketDto>().ReverseMap();
         CreateMap<Ticket, CreateTicketDto>().ReverseMap();
         CreateMap<Ticket, UpdateTicketDto>().ReverseMap();
@@ -69,10 +65,17 @@ public class MapperInitializer : Profile
         CreateMap<VehicleEnrollment, VehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, CreateVehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, UpdateVehicleEnrollmentDto>().ReverseMap();
-
-
+        CreateMap<VehicleEnrollment, VehicleEnrollmentWithDetailsDto>().ReverseMap();
+        CreateMap<VehicleEnrollment, CreateVehicleEnrollmentWithDetailsDto>().ReverseMap();
+        
         CreateMap<User, UserDto>().ReverseMap();
         CreateMap<User, CreateUserDto>().ReverseMap();
         CreateMap<User, UpdateUserDto>().ReverseMap();
+        
+        CreateMap<RouteAddressDetails, RouteAddressDetailsDto>().ReverseMap();
+        CreateMap<RouteAddressDetails, CreateRouteAddressDetailsDto>().ReverseMap();
+        CreateMap<RouteAddressDetails, UpdateRouteAddressDetailsDto>().ReverseMap();
+        CreateMap<RouteAddressDetails, RouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
+        CreateMap<RouteAddressDetails, CreateRouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
     }
 }

@@ -30,3 +30,15 @@ public class UpdateVehicleEnrollmentDto : CreateVehicleEnrollmentDto
     public bool IsCanceled { get; set; } = false;
     public string CancelationComment { get; set; } = null!;
 }
+
+public class CreateVehicleEnrollmentWithDetailsDto : CreateVehicleEnrollmentDto
+{
+    public IList<CreateRouteAddressDetailsInVehicleEnrollmentDto> RouteAddressDetails { get; set; } = null!;
+}
+
+public class VehicleEnrollmentWithDetailsDto
+{
+    public int Id { get; set; }
+    
+    public IList<RouteAddressDetailsInVehicleEnrollmentDto> RouteAddressDetails { get; set; } = null!;
+}

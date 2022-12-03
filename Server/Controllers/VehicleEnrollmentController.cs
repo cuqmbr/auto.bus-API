@@ -30,6 +30,19 @@ public class VehicleEnrollmentController : ControllerBase
     
         return CreatedAtAction(nameof(GetEnrollment), new {id = result.enrollment.Id}, result.enrollment);
     }
+    
+    [HttpPost("withDetails")]
+    public async Task<IActionResult> AddEnrollmentWithDetails(CreateVehicleEnrollmentWithDetailsDto enrollment)
+    {
+        var result = await _vehicleEnrollmentManagementService.AddEnrollmentWithDetails(enrollment);
+    
+        if (!result.isSucceed)
+        {
+            return result.actionResult;
+        }
+    
+        return CreatedAtAction(nameof(GetEnrollment), new {id = result.enrollment.Id}, result.enrollment);
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetEnrollments([FromQuery] VehicleEnrollmentParameters parameters)
@@ -46,10 +59,38 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollments);
     }
     
+    [HttpGet("withDetails")]
+    public async Task<IActionResult> GetEnrollments([FromQuery] VehicleEnrollmentWithDetailsParameters parameters)
+    {
+        var result = await _vehicleEnrollmentManagementService.GetEnrollmentsWithDetails(parameters);
+
+        if (!result.isSucceed)
+        {
+            return result.actionResult;
+        }
+        
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
+        
+        return Ok(result.enrollments);
+    }
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEnrollment(int id, [FromQuery] string? fields)
     {
         var result = await _vehicleEnrollmentManagementService.GetEnrollment(id, fields);
+
+        if (!result.isSucceed)
+        {
+            return result.actionResult;
+        }
+
+        return Ok(result.enrollment);
+    }
+    
+    [HttpGet("withDetails/{id}")]
+    public async Task<IActionResult> GetEnrollmentWithDetails(int id, [FromQuery] string? fields)
+    {
+        var result = await _vehicleEnrollmentManagementService.GetEnrollmentWithDetails(id, fields);
 
         if (!result.isSucceed)
         {

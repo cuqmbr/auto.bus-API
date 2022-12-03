@@ -36,6 +36,9 @@ public class StateManagementService : IStateManagementService
     
         await _dbContext.States.AddAsync(state);
         await _dbContext.SaveChangesAsync();
+
+        state = await _dbContext.States.Include(s => s.Country)
+            .FirstAsync(s => s.Id == state.Id);
     
         return (true, null, _mapper.Map<StateDto>(state));
     }

@@ -36,6 +36,9 @@ public class CityManagementService : ICityManagementService
     
         await _dbContext.Cities.AddAsync(city);
         await _dbContext.SaveChangesAsync();
+
+        city = await _dbContext.Cities.Include(c => c.State)
+            .ThenInclude(s => s.Country).FirstAsync(c => c.Id == city.Id);
     
         return (true, null, _mapper.Map<CityDto>(city));
     }

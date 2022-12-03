@@ -40,18 +40,16 @@ public class InCityAddressDto
 
 public class CreateAddressInRouteAddress
 {
-    public int? Id { get; set; }
-    
     [StringLength(maximumLength: 250, ErrorMessage = "Address name is too long")]
-    public string? Name { get; set; } = null!;
+    public string Name { get; set; } = null!;
     
     [Range(-90, 90, ErrorMessage = "Latitude must be in range(-90, 90)")]
-    public double? Latitude { get; set; }
+    public double Latitude { get; set; }
     
     [Range(-180, 180, ErrorMessage = "Longitude must be in range(-180, 180)")]
-    public double? Longitude { get; set; }
+    public double Longitude { get; set; }
     
-    public int? CityId { get; set; }
+    public int CityId { get; set; }
 }
 
 public class AddressInRouteAddress : CreateAddressInRouteAddress

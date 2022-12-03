@@ -36,6 +36,10 @@ public class AddressManagementService : IAddressManagementService
     
         await _dbContext.Addresses.AddAsync(address);
         await _dbContext.SaveChangesAsync();
+
+        address = await _dbContext.Addresses.Include(a => a.City)
+            .ThenInclude(c => c.State).ThenInclude(s => s.Country)
+            .FirstAsync(a => a.Id == address.Id);
     
         return (true, null, _mapper.Map<AddressDto>(address));
     }

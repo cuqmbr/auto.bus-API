@@ -49,21 +49,15 @@ public class RouteManagementService : IRouteManagementService
     {
         var route = _mapper.Map<Route>(createRouteWithAddressesDto);
 
-        foreach (var routeAddress in route.RouteAddresses)
-        {
-            var dbAddress = await _dbContext.Addresses
-                .FirstOrDefaultAsync(a => a.Id == routeAddress.AddressId);
-
-            if (dbAddress == null)
-            {
-                return (false, new BadRequestObjectResult($"Address with Id {routeAddress.AddressId} doesn't exist"), null!);
-            }
-            
-            routeAddress.Address = dbAddress;
-        }
+        
         
         await _dbContext.Routes.AddAsync(route);
         await _dbContext.SaveChangesAsync();
+
+        route = await _dbContext.Routes
+            .Include(r => r.RouteAddresses).ThenInclude(ra => ra.Address)
+            .ThenInclude(a => a.City).ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country).FirstAsync(r => r.Id == route.Id);
         
         return (true, null, _mapper.Map<RouteWithAddressesDto>(route));
     }
@@ -248,7 +242,7 @@ public class RouteManagementService : IRouteManagementService
         }
         
         var routeDto = _mapper.Map<RouteWithAddressesDto>(dbRoute);
-        var shapedData = _routeDataShaper.ShapeData(routeDto, fields);
+        var shapedData = _routeWithAddressesDataShaper.ShapeData(routeDto, fields);
 
         return (true, null, shapedData);
     }

@@ -23,6 +23,7 @@ builder.Services.AddControllers().AddNewtonsoftJson(options => {
     options.SerializerSettings.Formatting = Formatting.Indented;
     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
+    options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -116,6 +117,7 @@ builder.Services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
 builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 builder.Services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
 builder.Services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
+builder.Services.AddScoped<IDataShaper<VehicleEnrollmentWithDetailsDto>, DataShaper<VehicleEnrollmentWithDetailsDto>>();
 builder.Services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
 builder.Services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
 builder.Services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();

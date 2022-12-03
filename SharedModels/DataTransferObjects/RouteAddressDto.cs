@@ -30,14 +30,19 @@ public class CreateRouteAddressWithAddressDto
 {
     [Range(0, Int32.MaxValue)]
     public int Order { get; set; }
-
-    [Required]
-    public CreateAddressInRouteAddress Address { get; set; } = null!;
+    
+    public CreateAddressInRouteAddress? Address { get; set; }
+    
+    public int? AddressId { get; set; }
 }
 
 public class RouteAddressWithAddressDto
 {
+    public int Id { get; set; }
+    
     public int Order { get; set; }
     
     public AddressInRouteAddress Address { get; set; } = null!;
+    
+    public int AddressId { get; set; }
 }
