@@ -49,8 +49,6 @@ public class RouteManagementService : IRouteManagementService
     {
         var route = _mapper.Map<Route>(createRouteWithAddressesDto);
 
-        
-        
         await _dbContext.Routes.AddAsync(route);
         await _dbContext.SaveChangesAsync();
 
@@ -78,9 +76,9 @@ public class RouteManagementService : IRouteManagementService
         {
             shapedData = _routeSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            return (false, new BadRequestObjectResult("Invalid sorting string"), null, null)!;
+            return (false, new BadRequestObjectResult("Invalid sorting string"), null!, null!);
         }
         
         var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber,
@@ -133,7 +131,7 @@ public class RouteManagementService : IRouteManagementService
         {
             shapedData = _routeSortHelper.ApplySort(shapedData, parameters.Sort);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return (false, new BadRequestObjectResult("Invalid sorting string"), null, null)!;
         }

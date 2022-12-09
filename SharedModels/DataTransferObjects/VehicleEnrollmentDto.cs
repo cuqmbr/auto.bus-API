@@ -36,9 +36,7 @@ public class CreateVehicleEnrollmentWithDetailsDto : CreateVehicleEnrollmentDto
     public IList<CreateRouteAddressDetailsInVehicleEnrollmentDto> RouteAddressDetails { get; set; } = null!;
 }
 
-public class VehicleEnrollmentWithDetailsDto
+public class VehicleEnrollmentWithDetailsDto : VehicleEnrollmentDto
 {
-    public int Id { get; set; }
-    
     public IList<RouteAddressDetailsInVehicleEnrollmentDto> RouteAddressDetails { get; set; } = null!;
 }

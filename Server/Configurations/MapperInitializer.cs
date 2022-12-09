@@ -49,6 +49,14 @@ public class MapperInitializer : Profile
         CreateMap<Ticket, TicketDto>().ReverseMap();
         CreateMap<Ticket, CreateTicketDto>().ReverseMap();
         CreateMap<Ticket, UpdateTicketDto>().ReverseMap();
+        CreateMap<Ticket, CreateInTicketGroupTicketDto>().ReverseMap();
+        CreateMap<Ticket, InTicketGroupTicketDto>().ReverseMap();
+        
+        CreateMap<TicketGroup, TicketGroupDto>().ReverseMap();
+        CreateMap<TicketGroup, CreateTicketGroupDto>().ReverseMap();
+        CreateMap<TicketGroup, UpdateTicketGroupDto>().ReverseMap();
+        CreateMap<TicketGroup, CreateTicketGroupWithTicketsDto>().ReverseMap();
+        CreateMap<TicketGroup, TicketGroupWithTicketsDto>().ReverseMap();
 
         CreateMap<Review, ReviewDto>().ReverseMap();
         CreateMap<Review, CreateReviewDto>().ReverseMap();

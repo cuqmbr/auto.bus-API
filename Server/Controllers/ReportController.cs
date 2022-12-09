@@ -21,10 +21,24 @@ public class ReportController : ControllerBase
         
         if (!result.IsSucceed)
         {
-            return BadRequest(result.message);
+            return BadRequest(result.actionResult);
         }
 
         return File(result.ticketPdf, "application/pdf",
             $"ticket.pdf");
+    }
+    
+    [HttpGet("report")]
+    public async Task<IActionResult> GetCompanyReport(int companyId, DateTime fromDate, DateTime toDate)
+    {
+        var result = await _reportService.GetCompanyReport(companyId, fromDate, toDate);
+        
+        if (!result.isSucceed)
+        {
+            return BadRequest(result.actionResult);
+        }
+
+        return File(result.reportPdf, "application/pdf",
+            $"report.pdf");
     }
 }

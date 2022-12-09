@@ -99,6 +99,7 @@ builder.Services.AddScoped<IStateManagementService, StateManagementService>();
 builder.Services.AddScoped<ICityManagementService, CityManagementService>();
 builder.Services.AddScoped<IAddressManagementService, AddressManagementService>();
 builder.Services.AddScoped<ITicketManagementService, TicketManagementService>();
+builder.Services.AddScoped<ITicketGroupManagementService, TicketGroupManagementService>();
 builder.Services.AddScoped<IReviewManagementService, ReviewManagementService>();
 builder.Services.AddScoped<ICompanyManagementService, CompanyManagementService>();
 builder.Services.AddScoped<IVehicleManagementService, VehicleManagementService>();
@@ -113,6 +114,8 @@ builder.Services.AddScoped<IDataShaper<StateDto>, DataShaper<StateDto>>();
 builder.Services.AddScoped<IDataShaper<CityDto>, DataShaper<CityDto>>();
 builder.Services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
 builder.Services.AddScoped<IDataShaper<TicketDto>, DataShaper<TicketDto>>();
+builder.Services.AddScoped<IDataShaper<TicketGroupDto>, DataShaper<TicketGroupDto>>();
+builder.Services.AddScoped<IDataShaper<TicketGroupWithTicketsDto>, DataShaper<TicketGroupWithTicketsDto>>();
 builder.Services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
 builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 builder.Services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
@@ -123,6 +126,13 @@ builder.Services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteW
 builder.Services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
 
 builder.Services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
+
+builder.Services.AddScoped<AutomationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
+builder.Services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

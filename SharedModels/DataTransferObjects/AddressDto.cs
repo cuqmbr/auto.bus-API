@@ -5,7 +5,7 @@ namespace SharedModels.DataTransferObjects;
 public class AddressDto : CreateAddressDto
 {
     public int Id { get; set; }
-    public string FullName = null!;
+    public string FullName { get; set; } = null!;
 }
 
 public class CreateAddressDto

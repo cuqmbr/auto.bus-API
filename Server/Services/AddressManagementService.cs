@@ -81,8 +81,12 @@ public class AddressManagementService : IAddressManagementService
                 return;
             }
 
-            addresses = addresses.Where(a =>
-                a.Name.ToLower().Contains(search.ToLower()));
+            // TODO: Remove client evaluation
+            
+            addresses = addresses.ToArray().Where(a =>
+                a.Name.ToLower().Contains(search.ToLower()) ||
+                a.GetFullName().ToLower().Contains(search.ToLower()))
+                .AsQueryable();
         }
         
         void FilterByCityId(ref IQueryable<Address> addresses,

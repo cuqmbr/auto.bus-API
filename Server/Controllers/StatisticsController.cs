@@ -17,9 +17,18 @@ public class StatisticsController : ControllerBase
     }
     
     [HttpGet("routes")]
-    public async Task<IActionResult> GetPopularRoutes([FromQuery] int amount = 10)
+    public async Task<IActionResult> GetPopularRoutes([FromQuery] PopularRoutesParameters parameters)
     {
-        return Ok();
+        var result = await _statisticsService.GetPopularRoutes(parameters);
+
+        if (!result.IsSucceed)
+        {
+            return BadRequest(result.actionResult);
+        }
+        
+        Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
+
+        return Ok(result.route);
     }
 
     [HttpGet("users")]
@@ -30,7 +39,7 @@ public class StatisticsController : ControllerBase
 
         if (!result.IsSucceed)
         {
-            return BadRequest(result.message);
+            return BadRequest(result.actionResult);
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -45,7 +54,7 @@ public class StatisticsController : ControllerBase
 
         if (!result.IsSucceed)
         {
-            return BadRequest(result.message);
+            return BadRequest(result.actionResult);
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
@@ -60,7 +69,7 @@ public class StatisticsController : ControllerBase
 
         if (!result.IsSucceed)
         {
-            return BadRequest(result.message);
+            return BadRequest(result.actionResult);
         }
         
         Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(result.pagingMetadata));
