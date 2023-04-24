@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using SharedModels.DataTransferObjects;
 
 namespace Server.Models;
 

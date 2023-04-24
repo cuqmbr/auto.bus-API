@@ -72,7 +72,7 @@ public class AuthenticationController : ControllerBase
         return Ok(authResponse);
     }
     
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize]
     [HttpPost("revoke-session")]
     public async Task<IActionResult> RevokeToken()
     {

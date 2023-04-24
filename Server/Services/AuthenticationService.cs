@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Server.Configurations;
-using Server.Constants;
 using Server.Models;
 using SharedModels.Requests;
 using SharedModels.Responses;
@@ -45,7 +44,7 @@ public class AuthenticationService : IAuthenticationService
             return (false, $"{result.Errors?.First().Description}");
         }
         
-        await _userManager.AddToRoleAsync(user, Authorization.DefaultRole.ToString());
+        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
         return (true, $"User registered with email {user.Email}.");
     }
 

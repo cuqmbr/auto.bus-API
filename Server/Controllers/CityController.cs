@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/cities")]
 [ApiController]
 public class CityController : ControllerBase
@@ -17,6 +19,7 @@ public class CityController : ControllerBase
         _cityManagementService = cityManagementService;
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost]
     public async Task<IActionResult> AddCity(CreateCityDto city)
     {
@@ -30,6 +33,7 @@ public class CityController : ControllerBase
         return CreatedAtAction(nameof(GetCity), new {id = result.city.Id}, result.city);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet]
     public async Task<IActionResult> GetCities([FromQuery] CityParameters parameters)
     {
@@ -45,6 +49,7 @@ public class CityController : ControllerBase
         return Ok(result.cities);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCity(int id, [FromQuery] string? fields)
     {
@@ -58,6 +63,7 @@ public class CityController : ControllerBase
         return Ok(result.city);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCountry(int id, UpdateCityDto city)
     {
@@ -76,6 +82,7 @@ public class CityController : ControllerBase
         return Ok(result.city);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCountry(int id)
     {

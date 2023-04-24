@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/companies")]
 [ApiController]
 public class CompanyController : ControllerBase
@@ -17,6 +19,7 @@ public class CompanyController : ControllerBase
         _companyManagementService = companyManagementService;
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost]
     public async Task<IActionResult> AddCompany(CreateCompanyDto company)
     {
@@ -30,6 +33,7 @@ public class CompanyController : ControllerBase
         return CreatedAtAction(nameof(GetCompany), new {id = result.company.Id}, result.company);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpGet]
     public async Task<IActionResult> GetCompanies([FromQuery] CompanyParameters parameters)
     {
@@ -45,6 +49,7 @@ public class CompanyController : ControllerBase
         return Ok(result.companies);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCompany(int id, [FromQuery] string? fields)
     {
@@ -58,6 +63,7 @@ public class CompanyController : ControllerBase
         return Ok(result.company);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCompany(int id, UpdateCompanyDto company)
     {
@@ -71,6 +77,7 @@ public class CompanyController : ControllerBase
         return Ok(result.company);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCompany(int id)
     {

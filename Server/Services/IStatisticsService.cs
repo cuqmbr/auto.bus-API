@@ -1,6 +1,5 @@
 using System.Dynamic;
 using Microsoft.AspNetCore.Mvc;
-using Server.Models;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Statistics;
 

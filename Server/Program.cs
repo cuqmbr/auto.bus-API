@@ -8,12 +8,12 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Server.Configurations;
+using Server.Constants;
 using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using Server.Services;
 using SharedModels.DataTransferObjects;
-using Route = Server.Models.Route;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,21 +52,21 @@ builder.Services.AddSwaggerGen(options => {
     });
 });
 
-var corsPolicyName = "defaultCorsPolicy";
 builder.Services.AddCors(options => {
-    options.AddPolicy(corsPolicyName,
-        policy => policy.WithOrigins("http://localhost:4200").AllowCredentials()
-            .AllowAnyHeader().AllowAnyMethod());
+    options.AddDefaultPolicy(policy => policy.AllowAnyOrigin()
+        .AllowAnyHeader().AllowAnyMethod());
 });
+
+builder.Services.AddIdentityCore<User>(options => {
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequiredLength = 7;
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567889-_.";
+}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Configuration from AppSettings
 builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
 // Adding Authentication - JWT
-builder.Services.AddAuthentication(options => {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
         // options.RequireHttpsMetadata = false;
         // options.SaveToken = false;
@@ -76,22 +76,30 @@ builder.Services.AddAuthentication(options => {
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
-builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options => {
+    // options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+ 
+    // Policies for accessing endpoints on a top level based on user role
+    options.AddPolicy(Identity.Roles.User + "Access", policy => 
+        policy.RequireRole(Identity.Roles.User.ToString()));
+    options.AddPolicy(Identity.Roles.Driver + "Access", policy => 
+        policy.RequireRole(Identity.Roles.Driver.ToString(), Identity.Roles.Company.ToString(),
+            Identity.Roles.Administrator.ToString()));
+    options.AddPolicy(Identity.Roles.Company + "Access", policy => 
+        policy.RequireRole(Identity.Roles.Company.ToString(), Identity.Roles.Administrator.ToString()));
+    options.AddPolicy(Identity.Roles.Administrator + "Access", policy => 
+        policy.RequireRole(Identity.Roles.Administrator.ToString()));
+});
 
 builder.Services.AddAutoMapper(typeof(MapperInitializer));
 
-builder.Services.AddIdentity<User, IdentityRole>(options => {
-    options.User.RequireUniqueEmail = true;
-    options.Password.RequiredLength = 8;
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_.";
-}).AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
@@ -141,6 +149,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+// Data seeding
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+await SeedData.Initialize(services);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -148,19 +161,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+/*
 app.UseHttpsRedirection();
-
-// Data seeding
-// using var scope = app.Services.CreateScope();
-// var userManager = (UserManager<User>)scope.ServiceProvider.GetService(typeof(UserManager<User>))!;
-// var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>))!;
-// await ApplicationDbContextSeed.SeedEssentialsAsync(userManager, roleManager);
-
-app.MapControllers();
-
-app.UseCors(corsPolicyName);
+*/
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseCors();
+
+app.MapControllers();
 
 app.Run();

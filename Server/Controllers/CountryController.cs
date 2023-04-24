@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/countries")]
 [ApiController]
 public class CountryController : ControllerBase
@@ -17,6 +19,7 @@ public class CountryController : ControllerBase
         _countryManagementService = countryManagementService;
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost]
     public async Task<IActionResult> AddCountry(CreateCountryDto country)
     {
@@ -30,6 +33,7 @@ public class CountryController : ControllerBase
         return CreatedAtAction(nameof(GetCountry), new {id = result.country.Id}, result.country);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet]
     public async Task<IActionResult> GetCountries([FromQuery] CountryParameters parameters)
     {
@@ -45,6 +49,7 @@ public class CountryController : ControllerBase
         return Ok(result.countries);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCountry(int id, [FromQuery] string? fields)
     {
@@ -58,6 +63,7 @@ public class CountryController : ControllerBase
         return Ok(result.country);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCountry(int id, UpdateCountryDto country)
     {
@@ -71,6 +77,7 @@ public class CountryController : ControllerBase
         return Ok(result.country);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCountry(int id)
     {

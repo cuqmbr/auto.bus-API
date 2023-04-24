@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/states")] 
 [ApiController] 
 public class StateController : ControllerBase 
@@ -17,6 +19,7 @@ public class StateController : ControllerBase
         _stateManagementService = stateManagementService;
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost]
     public async Task<IActionResult> AddState(CreateStateDto state)
     {
@@ -30,6 +33,7 @@ public class StateController : ControllerBase
         return CreatedAtAction(nameof(GetState), new {id = result.state.Id}, result.state);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet]
     public async Task<IActionResult> GetStates([FromQuery] StateParameters parameters)
     {
@@ -45,6 +49,7 @@ public class StateController : ControllerBase
         return Ok(result.states);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetState(int id, [FromQuery] string? fields)
     {
@@ -58,6 +63,7 @@ public class StateController : ControllerBase
         return Ok(result.state);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateState(int id, UpdateStateDto state)
     {
@@ -76,6 +82,7 @@ public class StateController : ControllerBase
         return Ok(result.state);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteState(int id)
     {

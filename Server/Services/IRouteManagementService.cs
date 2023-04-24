@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
-using Route = Server.Models.Route;
 
 namespace Server.Services;
 
