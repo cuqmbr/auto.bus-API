@@ -2,9 +2,9 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class VehicleEnrollmentWithDetailsParameters : ParametersBase
 {
-    public const string DefaultFields = "id,vehicleId,routeId,departureDateTimeUtc," +
-                                        "delayTimeSpan,isCancelled,cancellationComment," +
-                                        "routeAddressDetails";
+    public const string DefaultFields = "id,vehicleId,vehicle,routeId,route,departureDateTimeUtc," +
+                                        "tickets,reviews,delayTimeSpan,isCancelled," +
+                                        "cancellationComment,routeAddressDetails";
     
     public VehicleEnrollmentWithDetailsParameters()
     {

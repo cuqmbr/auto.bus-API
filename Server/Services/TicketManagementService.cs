@@ -44,6 +44,7 @@ public class TicketManagementService : ITicketManagementService
             PagingMetadata<ExpandoObject> pagingMetadata)> GetTickets(TicketParameters parameters)
     {
         var dbTickets = _dbContext.Tickets
+            .Include(t => t.VehicleEnrollment)
             .AsQueryable();
 
         FilterByTicketPurchaseDateTime(ref dbTickets, parameters.FromPurchaseDateTimeUtc, 
@@ -114,6 +115,7 @@ public class TicketManagementService : ITicketManagementService
         }
         
         var dbTicket = await _dbContext.Tickets.Where(t => t.Id == id)
+            .Include(t => t.VehicleEnrollment)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

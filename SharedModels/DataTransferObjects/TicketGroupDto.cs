@@ -25,7 +25,7 @@ public class UpdateTicketGroupDto
 public class TicketGroupWithTicketsDto
 {
     public int Id { get; set; }
-    public IList<InTicketGroupTicketDto> Tickets { get; set; } = null!;
+    public IList<TicketDto> Tickets { get; set; } = null!;
 }
 
 public class CreateTicketGroupWithTicketsDto : CreateTicketGroupDto

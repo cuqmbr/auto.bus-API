@@ -9,6 +9,8 @@ public class MapperInitializer : Profile
 {
     public MapperInitializer()
     {
+        RecognizePostfixes("Utc");
+        
         CreateMap<Country, CountryDto>().ReverseMap();
         CreateMap<Country, CreateCountryDto>().ReverseMap();
         CreateMap<Country, UpdateCountryDto>().ReverseMap();
@@ -45,11 +47,13 @@ public class MapperInitializer : Profile
         CreateMap<Route, CreateRouteWithAddressesDto>().ReverseMap();
         CreateMap<Route, RouteWithAddressesDto>().ReverseMap();
 
-        CreateMap<Ticket, TicketDto>().ReverseMap();
+        CreateMap<Ticket, TicketDto>().IncludeMembers(t => t.TicketGroup).ReverseMap();
+        CreateMap<TicketGroup, TicketDto>();
         CreateMap<Ticket, CreateTicketDto>().ReverseMap();
         CreateMap<Ticket, UpdateTicketDto>().ReverseMap();
         CreateMap<Ticket, CreateInTicketGroupTicketDto>().ReverseMap();
-        CreateMap<Ticket, InTicketGroupTicketDto>().ReverseMap();
+        CreateMap<Ticket, InTicketGroupTicketDto>();
+        CreateMap<Ticket, InVehicleEnrollmentTicketDto>();
         
         CreateMap<TicketGroup, TicketGroupDto>().ReverseMap();
         CreateMap<TicketGroup, CreateTicketGroupDto>().ReverseMap();
@@ -60,20 +64,24 @@ public class MapperInitializer : Profile
         CreateMap<Review, ReviewDto>().ReverseMap();
         CreateMap<Review, CreateReviewDto>().ReverseMap();
         CreateMap<Review, UpdateReviewDto>().ReverseMap();
+        CreateMap<Review, InVehicleEnrollmentReviewDto>();
         
         CreateMap<Company, CompanyDto>().ReverseMap();
         CreateMap<Company, CreateCompanyDto>().ReverseMap();
         CreateMap<Company, UpdateCompanyDto>().ReverseMap();
+        CreateMap<Company, InVehicleCompanyDto>();
         
         CreateMap<Vehicle, VehicleDto>().ReverseMap();
         CreateMap<Vehicle, CreateVehicleDto>().ReverseMap();
         CreateMap<Vehicle, UpdateVehicleDto>().ReverseMap();
+        CreateMap<Vehicle, InVehicleEnrollmentVehicleDto>();
         
         CreateMap<VehicleEnrollment, VehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, CreateVehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, UpdateVehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, VehicleEnrollmentWithDetailsDto>().ReverseMap();
         CreateMap<VehicleEnrollment, CreateVehicleEnrollmentWithDetailsDto>().ReverseMap();
+        CreateMap<VehicleEnrollment, InReviewVehicleEnrollmentDto>();
         
         CreateMap<User, UserDto>().ReverseMap();
         CreateMap<User, CreateUserDto>().ReverseMap();

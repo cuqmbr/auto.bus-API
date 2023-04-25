@@ -100,6 +100,7 @@ public class TicketGroupManagementService : ITicketGroupManagementService
     {
         var dbTicketGroups = _dbContext.TicketGroups
             .Include(tg => tg.Tickets)
+            .ThenInclude(t => t.VehicleEnrollment)
             .AsQueryable();
         
         FilterTicketGroupsByUserId(ref dbTicketGroups, parameters.UserId);

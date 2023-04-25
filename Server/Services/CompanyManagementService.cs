@@ -44,6 +44,7 @@ public class CompanyManagementService : ICompanyManagementService
             PagingMetadata<ExpandoObject> pagingMetadata)> GetCompanies(CompanyParameters parameters)
     {
         var dbCompanies = _dbContext.Companies
+            .Include(c => c.Vehicles)
             .AsQueryable();
 
         SearchByAllCompanyFields(ref dbCompanies, parameters.Search);
@@ -110,6 +111,7 @@ public class CompanyManagementService : ICompanyManagementService
         }
         
         var dbCompany = await _dbContext.Companies.Where(c => c.Id == id)
+            .Include(c => c.Vehicles)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

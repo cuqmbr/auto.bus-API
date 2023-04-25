@@ -2,7 +2,7 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class StateParameters : ParametersBase
 {
-    public const string DefaultFields = "id,name,countryId";
+    public const string DefaultFields = "id,name,fullName,cities,countryId,country";
     
     public StateParameters()
     {

@@ -2,7 +2,8 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class TicketParameters : ParametersBase
 {
-    public const string DefaultFields = "id,userId,vehicleEnrollmentId,purchaseDateTimeUtc,isReturned";
+    public const string DefaultFields = "id,userId,vehicleEnrollmentId,vehicleEnrollment," +
+                                        "purchaseDateTimeUtc,isReturned,isMissed";
     
     public TicketParameters()
     {

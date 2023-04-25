@@ -44,6 +44,7 @@ public class VehicleManagementService : IVehicleManagementService
             PagingMetadata<ExpandoObject> pagingMetadata)> GetVehicles(VehicleParameters parameters)
     {
         var dbVehicles = _dbContext.Vehicles
+            .Include(t => t.Company)
             .AsQueryable();
 
         var vehicleDtos = _mapper.ProjectTo<VehicleDto>(dbVehicles);
@@ -208,6 +209,7 @@ public class VehicleManagementService : IVehicleManagementService
         }
         
         var dbVehicle = await _dbContext.Vehicles.Where(v => v.Id == id)
+            .Include(t => t.Company)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

@@ -6,7 +6,9 @@ public class StateDto : CreateStateDto
 {
     public int Id { get; set; }
     
-    public string FullName = null!;
+    public string FullName { get; set; }= null!;
+
+    public InStateCountryDto Country { get; set; } = null!;
     
     public virtual IList<InStateCityDto> Cities { get; set; } = null!;
 }

@@ -2,7 +2,7 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class VehicleParameters : ParametersBase
 {
-    public const string DefaultFields = "id,companyId,number,type,capacity,hasClimateControl," +
+    public const string DefaultFields = "id,companyId,company,number,type,capacity,hasClimateControl," +
                                         "hasWiFi,hasWC,hasStewardess,hasTV,hasOutlet,hasBelts";
     
     public VehicleParameters()

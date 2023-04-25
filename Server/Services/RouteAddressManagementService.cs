@@ -44,6 +44,10 @@ public class RouteAddressManagementService : IRouteAddressManagementService
             PagingMetadata<ExpandoObject> pagingMetadata)> GetRouteAddresses(RouteAddressParameters parameters)
     {
         var dbRouteAddresses = _dbContext.RouteAddresses
+            .Include(ra => ra.Route)
+            .Include(ra => ra.Address)
+            .ThenInclude(a => a.City).ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country)
             .AsQueryable();
 
         FilterByRouteAddressRouteId(ref dbRouteAddresses, parameters.RouteId);
@@ -97,6 +101,10 @@ public class RouteAddressManagementService : IRouteAddressManagementService
         }
         
         var dbRouteAddress = await _dbContext.RouteAddresses.Where(ra => ra.Id == id)
+            .Include(ra => ra.Route)
+            .Include(ra => ra.Address)
+            .ThenInclude(a => a.City).ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

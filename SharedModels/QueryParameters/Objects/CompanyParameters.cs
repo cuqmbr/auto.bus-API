@@ -2,7 +2,7 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class CompanyParameters : ParametersBase
 {
-    public const string DefaultFields = "id,ownerId,name";
+    public const string DefaultFields = "id,ownerId,name,vehicles";
     
     public CompanyParameters()
     {

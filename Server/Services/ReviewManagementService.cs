@@ -113,6 +113,7 @@ public class ReviewManagementService : IReviewManagementService
         }
         
         var dbReview = await _dbContext.Reviews.Where(r => r.Id == id)
+            .Include(r => r.VehicleEnrollment)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

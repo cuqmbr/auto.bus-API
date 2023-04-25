@@ -5,6 +5,10 @@ namespace SharedModels.DataTransferObjects;
 public class RouteAddressDto : CreateRouteAddressDto
 {
     public int Id { get; set; }
+    
+    public RouteDto Route { get; set; } = null!;
+    
+    public AddressDto Address { get; set; } = null!;
 }
 
 public class CreateRouteAddressDto

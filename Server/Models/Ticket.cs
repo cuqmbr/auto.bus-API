@@ -8,7 +8,7 @@ public class Ticket
     [Key]
     public int Id { get; set; }
     
-    [ForeignKey("UserId")]
+    [ForeignKey("TicketGroupId")]
     public int TicketGroupId { get; set; }
     public TicketGroup TicketGroup { get; set; } = null!;
     

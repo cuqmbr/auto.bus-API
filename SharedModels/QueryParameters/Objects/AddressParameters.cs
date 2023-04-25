@@ -2,7 +2,7 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class AddressParameters : ParametersBase
 {
-    public const string DefaultFields = "id,name,cityId";
+    public const string DefaultFields = "id,name,fullName,latitude,longitude,cityId";
     
     public AddressParameters()
     {

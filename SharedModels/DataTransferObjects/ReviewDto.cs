@@ -8,6 +8,8 @@ public class ReviewDto : CreateReviewDto
     
     [DataType(DataType.DateTime)]
     public DateTime PostDateTimeUtc { get; set; }
+
+    public InReviewVehicleEnrollmentDto VehicleEnrollment { get; set; } = null!;
 }
 
 public class CreateReviewDto
@@ -31,5 +33,19 @@ public class UpdateReviewDto : CreateReviewDto
     public int Id { get; set; }
     
     [DataType(DataType.DateTime)]
+    public DateTime PostDateTime { get; set; }
+}
+
+public class InVehicleEnrollmentReviewDto
+{
+    public int Id { get; set; }
+    
+    [DataType(DataType.DateTime)]
     public DateTime PostDateTimeUtc { get; set; }
+
+    public string UserId { get; set; } = null!;
+    public int VehicleEnrollmentId { get; set; }
+    
+    public int Rating { get; set; }
+    public string Comment { get; set; } = null!;
 }
