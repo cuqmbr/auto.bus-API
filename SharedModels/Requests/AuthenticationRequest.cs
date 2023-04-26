@@ -5,7 +5,9 @@ namespace SharedModels.Requests;
 public class AuthenticationRequest
 {
     [Required]
-    public string EmailOrUsername { get; set; } = null!;
+    [EmailAddress]
+    public string Email { get; set; } = null!;
+    
     [Required]
     public string Password { get; set; } = null!;
 }

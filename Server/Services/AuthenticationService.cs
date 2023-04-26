@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -29,14 +30,30 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest)
     {
+        _userManager.UserValidators.Clear();
+        
         var userWithSameEmail = await _userManager.FindByEmailAsync(regRequest.Email);
-        var userWithSameUsername = await _userManager.FindByNameAsync(regRequest.Username);
-        if (userWithSameEmail != null || userWithSameUsername != null)
+        if (userWithSameEmail != null)
         {
-            return (false, $"Email {regRequest.Email} is already registered.");
+            return (false, $"Email is already registered.");
         }
 
-        var user = new User {UserName = regRequest.Username, Email = regRequest.Email};
+        var userWithSamePhone = await _userManager.Users
+            .SingleOrDefaultAsync(u => u.PhoneNumber == regRequest.PhoneNumber);
+        if (userWithSamePhone != null)
+        {
+            return (false, $"Phone is already registered.");
+        }
+
+        var user = new User
+        {
+            UserName = "temp",
+            FirstName = regRequest.FirstName,
+            LastName = regRequest.LastName,
+            Patronymic = regRequest.Patronymic,
+            Email = regRequest.Email,
+            PhoneNumber = regRequest.PhoneNumber
+        };
 
         var result = await _userManager.CreateAsync(user, regRequest.Password);
         if (!result.Succeeded)
@@ -55,24 +72,17 @@ public class AuthenticationService : IAuthenticationService
 
         User user;
 
-        if (authRequest.EmailOrUsername.Contains("@"))
-        {
-            user = await _userManager.FindByEmailAsync(authRequest.EmailOrUsername);
-        }
-        else
-        {
-            user = await _userManager.FindByNameAsync(authRequest.EmailOrUsername);
-        }
+        user = await _userManager.FindByEmailAsync(authRequest.Email);
 
         if (user == null)
         {
-            authResponse.Message = $"No accounts registered with {authRequest.EmailOrUsername}.";
+            authResponse.Message = $"No accounts registered with {authRequest.Email}.";
             return (false, authResponse, null);
         }
 
         if (!await _userManager.CheckPasswordAsync(user, authRequest.Password))
         {
-            authResponse.Message = $"Incorrect login or password.";
+            authResponse.Message = $"Incorrect email or password.";
             return (false, authResponse, null);
         }
 
@@ -176,10 +186,12 @@ public class AuthenticationService : IAuthenticationService
         
         var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("uid", user.Id),
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email)
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Name, user.LastName + user.FirstName + user.Patronymic),
+                new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
+                new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Exp, DateTime.UtcNow.AddMinutes(_jwt.ValidityInMinutes).ToString(CultureInfo.InvariantCulture))
             }
             .Union(userClaims)
             .Union(roleClaims);

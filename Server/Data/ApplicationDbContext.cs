@@ -12,7 +12,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     {
         Database.EnsureCreated();
     }
-    
+   protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<User>().Ignore(u => u.UserName).Ignore(u => u.NormalizedUserName);
+    } 
     public DbSet<Company> Companies { get; set; } = null!;
     public DbSet<Vehicle> Vehicles { get; set; } = null!;
     public DbSet<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;

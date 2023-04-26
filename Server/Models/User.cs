@@ -1,12 +1,21 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace Server.Models;
 
 public class User : IdentityUser
 {
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
+    [Required(ErrorMessage = "First Name is required")]
+    public string FirstName { get; set; } = null!;
+    
+    [Required(ErrorMessage = "Last Name is required")]
+    public string LastName { get; set; } = null!;
+    
+    [Required(ErrorMessage = "Patronymic is required")]
+    public string Patronymic { get; set; } = null!;
+    
     public IList<RefreshToken> RefreshTokens { get; set; } = null!;
+    
     public virtual IList<TicketGroup> TicketGroups { get; set; } = null!;
     public virtual IList<Review> Reviews { get; set; } = null!;
 }

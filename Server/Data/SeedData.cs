@@ -19,7 +19,6 @@ public class SeedData
         //Seed Default User
         var defaultUser = new User
         {
-            UserName = Constants.Identity.DefaultUsername,
             Email = Constants.Identity.DefaultEmail,
             EmailConfirmed = true
         };

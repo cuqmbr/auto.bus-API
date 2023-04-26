@@ -59,8 +59,7 @@ builder.Services.AddCors(options => {
 
 builder.Services.AddIdentityCore<User>(options => {
     options.User.RequireUniqueEmail = true;
-    options.Password.RequiredLength = 7;
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567889-_.";
+    options.Password.RequiredLength = 8;
 }).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Configuration from AppSettings
