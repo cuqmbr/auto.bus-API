@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Server.Configurations;
+using Server.Constants;
 using Server.Models;
 using SharedModels.Requests;
 using SharedModels.Responses;
@@ -19,30 +20,38 @@ public class AuthenticationService : IAuthenticationService
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly Jwt _jwt;
+    private readonly IHttpContextAccessor _contextAccessor;
+    private readonly LinkGenerator _linkGenerator;
+    private readonly IEmailSenderService _emailSender;
     
     public AuthenticationService(UserManager<User> userManager,
-        RoleManager<IdentityRole> roleManager, IOptions<Jwt> jwt)
+        RoleManager<IdentityRole> roleManager, IOptions<Jwt> jwt,
+        IHttpContextAccessor contextAccessor, LinkGenerator linkGenerator,
+        IEmailSenderService emailSender)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _jwt = jwt.Value;
+        _contextAccessor = contextAccessor;
+        _linkGenerator = linkGenerator;
+        _emailSender = emailSender;
+
+        _userManager.UserValidators.Clear();
     }
 
     public async Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest)
     {
-        _userManager.UserValidators.Clear();
-        
         var userWithSameEmail = await _userManager.FindByEmailAsync(regRequest.Email);
         if (userWithSameEmail != null)
         {
-            return (false, $"Email is already registered.");
+            return (false, "Email is already registered.");
         }
 
         var userWithSamePhone = await _userManager.Users
             .SingleOrDefaultAsync(u => u.PhoneNumber == regRequest.PhoneNumber);
         if (userWithSamePhone != null)
         {
-            return (false, $"Phone is already registered.");
+            return (false, "Phone is already registered.");
         }
 
         var user = new User
@@ -55,14 +64,40 @@ public class AuthenticationService : IAuthenticationService
             PhoneNumber = regRequest.PhoneNumber
         };
 
-        var result = await _userManager.CreateAsync(user, regRequest.Password);
+        var createUserResult = await _userManager.CreateAsync(user, regRequest.Password);
+        if (!createUserResult.Succeeded)
+        {
+            return (false, $"{createUserResult.Errors?.First().Description}");
+        }
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var confirmationLink = _linkGenerator.GetUriByAction(_contextAccessor.HttpContext,
+            "confirmEmail", "authentication",
+        new { email = user.Email, token = token, redirectionUrl = regRequest.EmailConfirmationRedirectUrl },
+            _contextAccessor.HttpContext.Request.Scheme);
+
+        await _emailSender.SendMail(user.Email, "Email confirmation", confirmationLink);
+
+        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
+        return (true, $"User registered with email {user.Email}. Before signing in confirm your email" +
+                      $"by following a link sent to registered email address.");
+    }
+
+    public async Task<(bool succeeded, string? message)> ConfirmEmailAsync(string email, string token)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            return (false, $"Email {email} not registered");
+        }
+
+        var result = await _userManager.ConfirmEmailAsync(user, token);
         if (!result.Succeeded)
         {
-            return (false, $"{result.Errors?.First().Description}");
+            return (false, $"Error confirming email {email} with token {token}");
         }
-        
-        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
-        return (true, $"User registered with email {user.Email}.");
+
+        return (true, $"Email {email} confirmed");
     }
 
     public async Task<(bool succeeded, AuthenticationResponse authResponse,
@@ -186,11 +221,13 @@ public class AuthenticationService : IAuthenticationService
         
         var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Name, user.LastName + user.FirstName + user.Patronymic),
-                new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
-                new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtStandardClaimNames.Sub, user.Id),
+                new Claim(JwtStandardClaimNames.Name, user.LastName + user.FirstName + user.Patronymic),
+                new Claim(JwtStandardClaimNames.GivenName, user.FirstName),
+                new Claim(JwtStandardClaimNames.FamilyName, user.LastName),
+                new Claim(JwtStandardClaimNames.MiddleName, user.Patronymic),
+                new Claim(JwtStandardClaimNames.Email, user.Email),
+                new Claim(JwtStandardClaimNames.EmailVerified, user.EmailConfirmed.ToString()),
                 new Claim(JwtRegisteredClaimNames.Exp, DateTime.UtcNow.AddMinutes(_jwt.ValidityInMinutes).ToString(CultureInfo.InvariantCulture))
             }
             .Union(userClaims)

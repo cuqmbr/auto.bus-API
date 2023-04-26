@@ -25,6 +25,7 @@ builder.Services.AddControllers().AddNewtonsoftJson(options => {
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
     options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
 });
+builder.Services.AddHttpContextAccessor();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -57,10 +58,11 @@ builder.Services.AddCors(options => {
         .AllowAnyHeader().AllowAnyMethod());
 });
 
-builder.Services.AddIdentityCore<User>(options => {
+builder.Services.AddIdentityCore<User>(options =>
+{
     options.User.RequireUniqueEmail = true;
     options.Password.RequiredLength = 8;
-}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 // Configuration from AppSettings
 builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
@@ -81,6 +83,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
+builder.Services.Configure<SmtpCredentials>(builder.Configuration.GetSection("SmtpCredentials"));
 
 builder.Services.AddAuthorization(options => {
     // options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
@@ -99,6 +102,7 @@ builder.Services.AddAuthorization(options => {
 
 builder.Services.AddAutoMapper(typeof(MapperInitializer));
 
+builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();

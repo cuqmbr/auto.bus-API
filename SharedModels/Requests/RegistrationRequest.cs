@@ -24,4 +24,7 @@ public class RegistrationRequest
     [Required(ErrorMessage = "Password is required")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = null!;
+
+    [Url]
+    public string EmailConfirmationRedirectUrl { get; set; } = null!;
 }

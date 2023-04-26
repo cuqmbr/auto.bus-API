@@ -24,8 +24,7 @@ public class AuthenticationController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest registerRequest)
     {
-        var (succeeded, message) =
-            await _authService.RegisterAsync(registerRequest);
+        var (succeeded, message) = await _authService.RegisterAsync(registerRequest);
 
         if (!succeeded)
         {
@@ -33,6 +32,20 @@ public class AuthenticationController : ControllerBase
         }
         
         return Ok(new ResponseBase{ Message = message });
+    }
+
+    [HttpGet("confirmEmail")]
+    public async Task<IActionResult> ConfirmEmailAsync([FromQuery] string email, [FromQuery] string token,
+        [FromQuery] string redirectionUrl)
+    {
+        var (succeeded, message) = await _authService.ConfirmEmailAsync(email, token);
+        
+        if (!succeeded)
+        {
+            return BadRequest(new ResponseBase {Message = message});
+        }
+        
+        return Redirect(redirectionUrl);
     }
 
     [HttpPost("authenticate")]
