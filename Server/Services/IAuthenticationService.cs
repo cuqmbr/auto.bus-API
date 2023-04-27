@@ -11,6 +11,9 @@ public interface IAuthenticationService
     
     Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
         AuthenticateAsync(AuthenticationRequest authRequest);
+    
+    Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
+        AuthenticateWithGoogleAsync(GoogleAuthenticationRequest authRequest);
 
     Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
         RenewRefreshTokenAsync(string? token);

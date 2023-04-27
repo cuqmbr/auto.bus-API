@@ -16,20 +16,22 @@ using Server.Services;
 using SharedModels.DataTransferObjects;
 
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
+var configuration = builder.Configuration;
 
 // Add services to the container.
 
-builder.Services.AddControllers().AddNewtonsoftJson(options => {
+services.AddControllers().AddNewtonsoftJson(options => {
     options.SerializerSettings.Formatting = Formatting.Indented;
     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
     options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
 });
-builder.Services.AddHttpContextAccessor();
+services.AddHttpContextAccessor();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options => {
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen(options => {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
         Scheme = "Bearer",
         BearerFormat = "JWT",
@@ -53,22 +55,25 @@ builder.Services.AddSwaggerGen(options => {
     });
 });
 
-builder.Services.AddCors(options => {
+services.AddCors(options => {
     options.AddDefaultPolicy(policy => policy.AllowAnyOrigin()
         .AllowAnyHeader().AllowAnyMethod());
 });
 
-builder.Services.AddIdentityCore<User>(options =>
+services.AddIdentityCore<User>(options =>
 {
     options.User.RequireUniqueEmail = true;
     options.Password.RequiredLength = 8;
 }).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 // Configuration from AppSettings
-builder.Services.Configure<Jwt>(builder.Configuration.GetSection("Jwt"));
+services.Configure<SmtpCredentials>(configuration.GetSection("SmtpCredentials"));
+services.Configure<Jwt>(configuration.GetSection("Jwt"));
+
 // Adding Authentication - JWT
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => {
+services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
         // options.RequireHttpsMetadata = false;
         // options.SaveToken = false;
         options.TokenValidationParameters = new TokenValidationParameters
@@ -77,15 +82,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateLifetime = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = configuration["Jwt:Issuer"],
+            ValidAudience = configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                Encoding.UTF8.GetBytes(configuration["Jwt:Key"]))
         };
     });
-builder.Services.Configure<SmtpCredentials>(builder.Configuration.GetSection("SmtpCredentials"));
 
-builder.Services.AddAuthorization(options => {
+services.AddAuthorization(options => {
     // options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
  
     // Policies for accessing endpoints on a top level based on user role
@@ -100,62 +104,62 @@ builder.Services.AddAuthorization(options => {
         policy.RequireRole(Identity.Roles.Administrator.ToString()));
 });
 
-builder.Services.AddAutoMapper(typeof(MapperInitializer));
+services.AddAutoMapper(typeof(MapperInitializer));
 
-builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+services.AddScoped<IEmailSenderService, EmailSenderService>();
+services.AddScoped<IAuthenticationService, AuthenticationService>();
 
-builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
-builder.Services.AddScoped<IStateManagementService, StateManagementService>();
-builder.Services.AddScoped<ICityManagementService, CityManagementService>();
-builder.Services.AddScoped<IAddressManagementService, AddressManagementService>();
-builder.Services.AddScoped<ITicketManagementService, TicketManagementService>();
-builder.Services.AddScoped<ITicketGroupManagementService, TicketGroupManagementService>();
-builder.Services.AddScoped<IReviewManagementService, ReviewManagementService>();
-builder.Services.AddScoped<ICompanyManagementService, CompanyManagementService>();
-builder.Services.AddScoped<IVehicleManagementService, VehicleManagementService>();
-builder.Services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmentManagementService>();
-builder.Services.AddScoped<IRouteManagementService, RouteManagementService>();
-builder.Services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
+services.AddScoped<ICountryManagementService, CountryManagementService>();
+services.AddScoped<IStateManagementService, StateManagementService>();
+services.AddScoped<ICityManagementService, CityManagementService>();
+services.AddScoped<IAddressManagementService, AddressManagementService>();
+services.AddScoped<ITicketManagementService, TicketManagementService>();
+services.AddScoped<ITicketGroupManagementService, TicketGroupManagementService>();
+services.AddScoped<IReviewManagementService, ReviewManagementService>();
+services.AddScoped<ICompanyManagementService, CompanyManagementService>();
+services.AddScoped<IVehicleManagementService, VehicleManagementService>();
+services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmentManagementService>();
+services.AddScoped<IRouteManagementService, RouteManagementService>();
+services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 
-builder.Services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
+services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
 
-builder.Services.AddScoped<IDataShaper<CountryDto>, DataShaper<CountryDto>>();
-builder.Services.AddScoped<IDataShaper<StateDto>, DataShaper<StateDto>>();
-builder.Services.AddScoped<IDataShaper<CityDto>, DataShaper<CityDto>>();
-builder.Services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
-builder.Services.AddScoped<IDataShaper<TicketDto>, DataShaper<TicketDto>>();
-builder.Services.AddScoped<IDataShaper<TicketGroupDto>, DataShaper<TicketGroupDto>>();
-builder.Services.AddScoped<IDataShaper<TicketGroupWithTicketsDto>, DataShaper<TicketGroupWithTicketsDto>>();
-builder.Services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
-builder.Services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
-builder.Services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
-builder.Services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
-builder.Services.AddScoped<IDataShaper<VehicleEnrollmentWithDetailsDto>, DataShaper<VehicleEnrollmentWithDetailsDto>>();
-builder.Services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
-builder.Services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
-builder.Services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
+services.AddScoped<IDataShaper<CountryDto>, DataShaper<CountryDto>>();
+services.AddScoped<IDataShaper<StateDto>, DataShaper<StateDto>>();
+services.AddScoped<IDataShaper<CityDto>, DataShaper<CityDto>>();
+services.AddScoped<IDataShaper<AddressDto>, DataShaper<AddressDto>>();
+services.AddScoped<IDataShaper<TicketDto>, DataShaper<TicketDto>>();
+services.AddScoped<IDataShaper<TicketGroupDto>, DataShaper<TicketGroupDto>>();
+services.AddScoped<IDataShaper<TicketGroupWithTicketsDto>, DataShaper<TicketGroupWithTicketsDto>>();
+services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
+services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
+services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
+services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
+services.AddScoped<IDataShaper<VehicleEnrollmentWithDetailsDto>, DataShaper<VehicleEnrollmentWithDetailsDto>>();
+services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
+services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
+services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
 
-builder.Services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
+services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
 
-builder.Services.AddScoped<AutomationService>();
-builder.Services.AddScoped<IReportService, ReportService>();
+services.AddScoped<AutomationService>();
+services.AddScoped<IReportService, ReportService>();
 
-builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-builder.Services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
-builder.Services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
+services.AddScoped<IStatisticsService, StatisticsService>();
+services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
+services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
 
 // Adding DB Context with PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+var connectionString = configuration.GetConnectionString("DefaultConnection");
+services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
 // Data seeding
 using var scope = app.Services.CreateScope();
-var services = scope.ServiceProvider;
-await SeedData.Initialize(services);
+var serviceProvider = scope.ServiceProvider;
+await SeedData.Initialize(serviceProvider);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

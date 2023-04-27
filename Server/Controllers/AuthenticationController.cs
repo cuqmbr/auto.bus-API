@@ -49,10 +49,26 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("authenticate")]
-    public async Task<IActionResult> GetTokenAsync(AuthenticationRequest authRequest)
+    public async Task<IActionResult> Authenticate(AuthenticationRequest authRequest)
     {
         var (succeeded, authResponse, refreshToken) =
             await _authService.AuthenticateAsync(authRequest);
+
+        if (!succeeded)
+        {
+            return BadRequest(authResponse);
+        }
+
+        SetRefreshTokenInCookie(refreshToken!);
+        
+        return Ok(authResponse);
+    }
+
+    [HttpPost("googleoauth")]
+    public async Task<IActionResult> AuthenticateWithGoogle(GoogleAuthenticationRequest authRequest)
+    {
+        var (succeeded, authResponse, refreshToken) =
+            await _authService.AuthenticateWithGoogleAsync(authRequest);
 
         if (!succeeded)
         {

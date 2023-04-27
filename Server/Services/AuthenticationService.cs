@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,24 +18,28 @@ namespace Server.Services;
 
 public class AuthenticationService : IAuthenticationService
 {
+    private readonly Jwt _jwt;
+    
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly Jwt _jwt;
     private readonly IHttpContextAccessor _contextAccessor;
     private readonly LinkGenerator _linkGenerator;
     private readonly IEmailSenderService _emailSender;
+    private readonly IConfiguration _configuration;
     
     public AuthenticationService(UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager, IOptions<Jwt> jwt,
         IHttpContextAccessor contextAccessor, LinkGenerator linkGenerator,
-        IEmailSenderService emailSender)
+        IEmailSenderService emailSender, IConfiguration configuration)
     {
+        _jwt = jwt.Value;
+        
         _userManager = userManager;
         _roleManager = roleManager;
-        _jwt = jwt.Value;
         _contextAccessor = contextAccessor;
         _linkGenerator = linkGenerator;
         _emailSender = emailSender;
+        _configuration = configuration;
 
         _userManager.UserValidators.Clear();
     }
@@ -70,15 +75,23 @@ public class AuthenticationService : IAuthenticationService
             return (false, $"{createUserResult.Errors?.First().Description}");
         }
 
+        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
+
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = _linkGenerator.GetUriByAction(_contextAccessor.HttpContext,
             "confirmEmail", "authentication",
         new { email = user.Email, token = token, redirectionUrl = regRequest.EmailConfirmationRedirectUrl },
             _contextAccessor.HttpContext.Request.Scheme);
 
-        await _emailSender.SendMail(user.Email, "Email confirmation", confirmationLink);
+        try
+        {
+            await _emailSender.SendMail(user.Email, "Email confirmation", confirmationLink);
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
 
-        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
         return (true, $"User registered with email {user.Email}. Before signing in confirm your email" +
                       $"by following a link sent to registered email address.");
     }
@@ -100,8 +113,8 @@ public class AuthenticationService : IAuthenticationService
         return (true, $"Email {email} confirmed");
     }
 
-    public async Task<(bool succeeded, AuthenticationResponse authResponse,
-        string? refreshToken)> AuthenticateAsync(AuthenticationRequest authRequest)
+    public async Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
+        AuthenticateAsync(AuthenticationRequest authRequest)
     {
         var authResponse = new AuthenticationResponse();
 
@@ -124,6 +137,56 @@ public class AuthenticationService : IAuthenticationService
         var jwtSecurityToken = await CreateJwtToken(user);
         authResponse.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
 
+        string refreshTokenString;
+        
+        if (user.RefreshTokens.Any(t => t.IsActive))
+        {
+            var activeRefreshToken =
+                user.RefreshTokens.First(t => t.IsActive);
+            refreshTokenString = activeRefreshToken.Token;
+            authResponse.RefreshTokenExpirationDate = activeRefreshToken.ExpiryDateTime;
+        }
+        else
+        {
+            var refreshToken = CreateRefreshToken();
+            refreshTokenString = refreshToken.Token;
+            authResponse.RefreshTokenExpirationDate = refreshToken.ExpiryDateTime;
+            user.RefreshTokens.Add(refreshToken);
+            await _userManager.UpdateAsync(user);
+        }
+        
+        return (true, authResponse, refreshTokenString);
+    }
+
+    public async Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
+        AuthenticateWithGoogleAsync(GoogleAuthenticationRequest authRequest)
+    {
+        GoogleJsonWebSignature.ValidationSettings settings = new GoogleJsonWebSignature.ValidationSettings();
+
+        settings.Audience = new List<string> { _configuration["Authentication:Google:ClientId"] };
+            
+        GoogleJsonWebSignature.Payload payload  = GoogleJsonWebSignature.ValidateAsync(authRequest.IdToken, settings).Result;
+
+        var authResponse = new AuthenticationResponse();
+
+        var user = await _userManager.FindByEmailAsync(payload.Email);
+        if (user == null)
+        {
+            var createUserResult = await _userManager.CreateAsync(new User
+            {
+                Email = payload.Email,
+                EmailConfirmed = payload.EmailVerified,
+                FirstName = payload.GivenName,
+                LastName = payload.FamilyName
+            });
+            
+            if (!createUserResult.Succeeded)
+            {
+                authResponse.Message = $"{createUserResult.Errors?.First().Description}";
+                return (false, authResponse, null);
+            }
+        }
+        
         string refreshTokenString;
         
         if (user.RefreshTokens.Any(t => t.IsActive))
@@ -222,7 +285,7 @@ public class AuthenticationService : IAuthenticationService
         var claims = new[]
             {
                 new Claim(JwtStandardClaimNames.Sub, user.Id),
-                new Claim(JwtStandardClaimNames.Name, user.LastName + user.FirstName + user.Patronymic),
+                new Claim(JwtStandardClaimNames.Name, $"{user.LastName} {user.FirstName} {user.Patronymic}"),
                 new Claim(JwtStandardClaimNames.GivenName, user.FirstName),
                 new Claim(JwtStandardClaimNames.FamilyName, user.LastName),
                 new Claim(JwtStandardClaimNames.MiddleName, user.Patronymic),

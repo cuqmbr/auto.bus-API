@@ -34,18 +34,11 @@ public class EmailSenderService : IEmailSenderService
         mailMessage.Subject = $"{applicationName}. {subject}";
         mailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Text) { Text = message};
 
-        try
-        {
-            await _smtpClient.ConnectAsync(_smtpCredentials.Host, _smtpCredentials.Port, true);
-            await _smtpClient.AuthenticateAsync(Encoding.ASCII, _smtpCredentials.User, _smtpCredentials.Password);
-            await _smtpClient.SendAsync(mailMessage);
-            await _smtpClient.DisconnectAsync(true);
-            return (true, "Letter has been sent successfully");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        await _smtpClient.ConnectAsync(_smtpCredentials.Host, Int32.Parse(_smtpCredentials.Port), false);
+        await _smtpClient.AuthenticateAsync(Encoding.ASCII, _smtpCredentials.User, _smtpCredentials.Password);
+        await _smtpClient.SendAsync(mailMessage);
+        await _smtpClient.DisconnectAsync(true);
+        
+        return (true, "Letter has been sent successfully");
     }
 }
