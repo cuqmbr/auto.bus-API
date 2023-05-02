@@ -2,7 +2,7 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class ReviewParameters : ParametersBase
 {
-    public const string DefaultFields = "id,userId,vehicleEnrollmentId,vehicleEnrollment,rating,comment";
+    public const string DefaultFields = "id,rating,comment,userId,user,vehicleEnrollmentId,vehicleEnrollment";
     
     public ReviewParameters()
     {
@@ -14,4 +14,5 @@ public class ReviewParameters : ParametersBase
 
     public string? Comment { get; set; }
     public string? UserId { get; set; }
+    public int? CompanyId { get; set; }
 }

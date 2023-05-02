@@ -13,6 +13,7 @@ using Server.Constants;
 using Server.Models;
 using SharedModels.Requests;
 using SharedModels.Responses;
+using Utils;
 
 namespace Server.Services;
 
@@ -75,7 +76,7 @@ public class AuthenticationService : IAuthenticationService
             return (false, $"{createUserResult.Errors?.First().Description}");
         }
 
-        await _userManager.AddToRoleAsync(user, Constants.Identity.DefaultRole.ToString());
+        await _userManager.AddToRoleAsync(user, Identity.DefaultRole.ToString());
 
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = _linkGenerator.GetUriByAction(_contextAccessor.HttpContext,
@@ -285,10 +286,12 @@ public class AuthenticationService : IAuthenticationService
         var claims = new[]
             {
                 new Claim(JwtStandardClaimNames.Sub, user.Id),
-                new Claim(JwtStandardClaimNames.Name, $"{user.LastName} {user.FirstName} {user.Patronymic}"),
+                new Claim(JwtStandardClaimNames.Name, user.GetFullName()),
                 new Claim(JwtStandardClaimNames.GivenName, user.FirstName),
                 new Claim(JwtStandardClaimNames.FamilyName, user.LastName),
                 new Claim(JwtStandardClaimNames.MiddleName, user.Patronymic),
+                new Claim(JwtStandardClaimNames.Gender, user.Gender?.ToString() ?? "Undefined"),
+                new Claim(JwtStandardClaimNames.BirthDate, user.BirthDate?.ToString()?? "Undefined"),
                 new Claim(JwtStandardClaimNames.Email, user.Email),
                 new Claim(JwtStandardClaimNames.EmailVerified, user.EmailConfirmed.ToString()),
                 new Claim(JwtRegisteredClaimNames.Exp, DateTime.UtcNow.AddMinutes(_jwt.ValidityInMinutes).ToString(CultureInfo.InvariantCulture))

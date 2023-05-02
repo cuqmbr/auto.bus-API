@@ -1,4 +1,4 @@
-namespace Server.Constants;
+namespace Utils;
 
 public class Identity
 {
@@ -10,7 +10,19 @@ public class Identity
         Administrator
     }
 
+    public enum Gender
+    {
+        Male,
+        Female
+    }
+
+    public enum Document
+    {
+        Passport,
+        DriverLicence
+    }
+
     public const string DefaultEmail = "admin@subdomain.domain";
     public const string DefaultPassword = "123qwe!@#QWE";
-    public const Roles DefaultRole = Roles.Administrator;
+    public const Roles DefaultRole = Roles.User;
 }

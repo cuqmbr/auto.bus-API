@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Server.Data;
@@ -11,9 +12,10 @@ using Server.Data;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230430115750_Add_Gender_BirthDate_Document_DocumentDetail_fields_to_User_table")]
+    partial class Add_Gender_BirthDate_Document_DocumentDetail_fields_to_User_table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -179,7 +181,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CityId");
 
-                    b.ToTable("Addresses", (string)null);
+                    b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("Server.Models.City", b =>
@@ -201,7 +203,7 @@ namespace Server.Migrations
 
                     b.HasIndex("StateId");
 
-                    b.ToTable("Cities", (string)null);
+                    b.ToTable("Cities");
                 });
 
             modelBuilder.Entity("Server.Models.Company", b =>
@@ -225,23 +227,7 @@ namespace Server.Migrations
                     b.HasIndex("OwnerId")
                         .IsUnique();
 
-                    b.ToTable("Companies", (string)null);
-                });
-
-            modelBuilder.Entity("Server.Models.CompanyDriver", b =>
-                {
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("DriverId")
-                        .HasColumnType("text");
-
-                    b.HasKey("CompanyId", "DriverId");
-
-                    b.HasIndex("DriverId")
-                        .IsUnique();
-
-                    b.ToTable("CompanyDrivers", (string)null);
+                    b.ToTable("Companies");
                 });
 
             modelBuilder.Entity("Server.Models.Country", b =>
@@ -262,7 +248,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Countries", (string)null);
+                    b.ToTable("Countries");
                 });
 
             modelBuilder.Entity("Server.Models.Review", b =>
@@ -295,7 +281,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleEnrollmentId");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Server.Models.Route", b =>
@@ -312,7 +298,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Routes", (string)null);
+                    b.ToTable("Routes");
                 });
 
             modelBuilder.Entity("Server.Models.RouteAddress", b =>
@@ -341,7 +327,7 @@ namespace Server.Migrations
 
                     b.HasIndex("RouteId");
 
-                    b.ToTable("RouteAddresses", (string)null);
+                    b.ToTable("RouteAddresses");
                 });
 
             modelBuilder.Entity("Server.Models.RouteAddressDetails", b =>
@@ -373,7 +359,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleEnrollmentId");
 
-                    b.ToTable("RouteAddressDetails", (string)null);
+                    b.ToTable("RouteAddressDetails");
                 });
 
             modelBuilder.Entity("Server.Models.State", b =>
@@ -395,7 +381,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CountryId");
 
-                    b.ToTable("States", (string)null);
+                    b.ToTable("States");
                 });
 
             modelBuilder.Entity("Server.Models.Ticket", b =>
@@ -433,7 +419,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleEnrollmentId");
 
-                    b.ToTable("Tickets", (string)null);
+                    b.ToTable("Tickets");
                 });
 
             modelBuilder.Entity("Server.Models.TicketGroup", b =>
@@ -452,7 +438,7 @@ namespace Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TicketGroups", (string)null);
+                    b.ToTable("TicketGroups");
                 });
 
             modelBuilder.Entity("Server.Models.User", b =>
@@ -578,7 +564,7 @@ namespace Server.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Vehicles", (string)null);
+                    b.ToTable("Vehicles");
                 });
 
             modelBuilder.Entity("Server.Models.VehicleEnrollment", b =>
@@ -613,7 +599,7 @@ namespace Server.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("VehicleEnrollments", (string)null);
+                    b.ToTable("VehicleEnrollments");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -698,25 +684,6 @@ namespace Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Server.Models.CompanyDriver", b =>
-                {
-                    b.HasOne("Server.Models.Company", "Company")
-                        .WithMany("CompanyDrivers")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Server.Models.User", "Driver")
-                        .WithOne("Employer")
-                        .HasForeignKey("Server.Models.CompanyDriver", "DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-
-                    b.Navigation("Driver");
                 });
 
             modelBuilder.Entity("Server.Models.Review", b =>
@@ -819,7 +786,7 @@ namespace Server.Migrations
 
             modelBuilder.Entity("Server.Models.User", b =>
                 {
-                    b.OwnsMany("Server.Models.User.RefreshTokens#Server.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("Server.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("UserId")
                                 .HasColumnType("text");
@@ -845,7 +812,7 @@ namespace Server.Migrations
 
                             b1.HasKey("UserId", "Id");
 
-                            b1.ToTable("RefreshToken", (string)null);
+                            b1.ToTable("RefreshToken");
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");
@@ -896,8 +863,6 @@ namespace Server.Migrations
 
             modelBuilder.Entity("Server.Models.Company", b =>
                 {
-                    b.Navigation("CompanyDrivers");
-
                     b.Navigation("Vehicles");
                 });
 
@@ -931,9 +896,6 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.User", b =>
                 {
                     b.Navigation("Company")
-                        .IsRequired();
-
-                    b.Navigation("Employer")
                         .IsRequired();
 
                     b.Navigation("Reviews");

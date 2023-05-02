@@ -14,5 +14,6 @@ public class Company
     public string OwnerId { get; set; }  = null!;
     public User Owner { get; set; } = null!;
 
-    public virtual List<Vehicle> Vehicles { get; set; } = null!;
+    public virtual IList<Vehicle> Vehicles { get; set; } = null!;
+    public virtual IList<CompanyDriver> CompanyDrivers { get; set; } = null!;
 }

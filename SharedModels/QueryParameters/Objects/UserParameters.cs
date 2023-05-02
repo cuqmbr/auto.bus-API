@@ -2,17 +2,13 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class UserParameters : ParametersBase
 {
-    public const string DefaultFields = "";
+    public const string DefaultFields = "id,firstName,lastName,patronymic,email,emailConfirmed,phoneNumber," +
+                                         "phoneNumberConfirmed,birthDate,gender,document,documentDetails," +
+                                         "roles,reviews,ticketGroups";
     
     public UserParameters()
     {
-        Sort = "id";
+        Sort = "";
         Fields = DefaultFields;
     }
-    
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Username { get; set; }
-    public string? Email { get; set; }
-    public string? Phone { get; set; }
 }

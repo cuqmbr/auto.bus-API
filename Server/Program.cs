@@ -8,12 +8,12 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Server.Configurations;
-using Server.Constants;
 using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using Server.Services;
 using SharedModels.DataTransferObjects;
+using Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -121,8 +121,8 @@ services.AddScoped<IVehicleManagementService, VehicleManagementService>();
 services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmentManagementService>();
 services.AddScoped<IRouteManagementService, RouteManagementService>();
 services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
-
-services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
+services.AddScoped<IUserManagementService, UserManagementService>();
+services.AddScoped<IDriverManagementService, DriverManagementService>();
 
 services.AddScoped<IDataShaper<CountryDto>, DataShaper<CountryDto>>();
 services.AddScoped<IDataShaper<StateDto>, DataShaper<StateDto>>();
@@ -139,15 +139,16 @@ services.AddScoped<IDataShaper<VehicleEnrollmentWithDetailsDto>, DataShaper<Vehi
 services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
 services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
 services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
+services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
+services.AddScoped<IDataShaper<DriverDto>, DataShaper<DriverDto>>();
+services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
 
+services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
 services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
 
 services.AddScoped<AutomationService>();
 services.AddScoped<IReportService, ReportService>();
-
 services.AddScoped<IStatisticsService, StatisticsService>();
-services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
-services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
 
 // Adding DB Context with PostgreSQL
 var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -162,7 +163,7 @@ var serviceProvider = scope.ServiceProvider;
 await SeedData.Initialize(serviceProvider);
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (Convert.ToBoolean(configuration["UseApiExplorer"]))
 {
     app.UseSwagger();
     app.UseSwaggerUI();

@@ -44,11 +44,14 @@ public class ReviewManagementService : IReviewManagementService
             PagingMetadata<ExpandoObject> pagingMetadata)> GetReviews(ReviewParameters parameters)
     {
         var dbReviews = _dbContext.Reviews
+            .Include(r => r.VehicleEnrollment).ThenInclude(ve => ve.Vehicle)
+            .ThenInclude(v => v.Company).Include(r => r.User)
             .AsQueryable();
 
         FilterByReviewRating(ref dbReviews, parameters.FromRating, parameters.ToRating);
         FilterByReviewComment(ref dbReviews, parameters.Comment);
         FilterByReviewUserId(ref dbReviews, parameters.UserId);
+        FilterByReviewCompanyId(ref dbReviews, parameters.CompanyId);
 
         var reviewDtos = _mapper.ProjectTo<ReviewDto>(dbReviews);
         var shapedData = _reviewDataShaper.ShapeData(reviewDtos, parameters.Fields).AsQueryable();
@@ -103,6 +106,16 @@ public class ReviewManagementService : IReviewManagementService
             reviews = reviews.Where(r =>
                 r.UserId.Contains(userId.ToLower()));
         }
+        
+        void FilterByReviewCompanyId(ref IQueryable<Review> reviews, int? companyId)
+        {
+            if (!reviews.Any() || companyId == null)
+            {
+                return;
+            }
+
+            reviews = reviews.Where(r => r.VehicleEnrollment.Vehicle.CompanyId == companyId);
+        }
     }
     
     public async Task<(bool isSucceed, IActionResult? actionResult, ExpandoObject review)> GetReview(int id, string? fields)
@@ -113,7 +126,8 @@ public class ReviewManagementService : IReviewManagementService
         }
         
         var dbReview = await _dbContext.Reviews.Where(r => r.Id == id)
-            .Include(r => r.VehicleEnrollment)
+            .Include(r => r.VehicleEnrollment).ThenInclude(ve => ve.Vehicle)
+            .ThenInclude(v => v.Company).Include(r => r.User)
             .FirstAsync();
 
         if (String.IsNullOrWhiteSpace(fields))

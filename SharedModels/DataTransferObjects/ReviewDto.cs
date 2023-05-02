@@ -9,6 +9,7 @@ public class ReviewDto : CreateReviewDto
     [DataType(DataType.DateTime)]
     public DateTime PostDateTimeUtc { get; set; }
 
+    public StrippedUserDto User { get; set; } = null!;
     public InReviewVehicleEnrollmentDto VehicleEnrollment { get; set; } = null!;
 }
 

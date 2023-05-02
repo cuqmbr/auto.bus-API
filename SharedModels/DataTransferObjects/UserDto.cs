@@ -1,39 +1,73 @@
 using System.ComponentModel.DataAnnotations;
+using Utils;
 
 namespace SharedModels.DataTransferObjects;
 
-public class UserDto : UpdateUserDto
+public class UserDto
 {
-    public virtual CompanyDto Company { get; set; } = null!;
+    public string Id { get; set; } = null!;
     
-    public virtual IList<TicketDto> Tickets { get; set; } = null!;
-    public virtual IList<ReviewDto> Ratings { get; set; } = null!;
-}
-
-public class CreateUserDto
-{
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-
-    [Required(ErrorMessage = "Username is required")]
-    public string UserName { get; set; } = null!;
+    public string FirstName { get; set; } = null!;
     
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress]
+    public string LastName { get; set; } = null!;
+    
+    public string Patronymic { get; set; } = null!;
+    
+    [DataType(DataType.Date)]
+    public DateTime? BirthDate { get; set; }
+    
+    public Identity.Gender? Gender { get; set; }
+    
+    public Identity.Document? Document { get; set; }
+    
+    public string? DocumentDetails { get; set; }
+    
     public string Email { get; set; } = null!;
     public bool EmailConfirmed { get; set; } = false;
-    
-    [Required(ErrorMessage = "Password is required")]
-    [DataType(DataType.Password)]
-    public string Password { get; set; } = null!;
-    [DataType(DataType.Password)]
-    [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-    public string ConfirmPassword { get; set; } = null!;
     
     public string? PhoneNumber { get; set; }
     public bool PhoneNumberConfirmed { get; set; } = false;
 
-    public virtual IList<string> RoleIds { get; set; } = new List<string> { "User" };
+    public virtual IList<string> Roles { get; set; } = null!;
+    
+    public virtual IList<TicketGroupDto>? TicketGroups { get; set; } = null!;
+    public virtual IList<ReviewDto>? Reviews { get; set; } = null!;
+}
+
+public class CreateUserDto
+{
+    [Required]
+    public string FirstName { get; set; } = null!;
+    
+    [Required]
+    public string LastName { get; set; } = null!;
+    
+    [Required]
+    public string Patronymic { get; set; } = null!;
+    
+    [DataType(DataType.Date)]
+    public DateTime? BirthDate { get; set; }
+    
+    public Identity.Gender? Gender { get; set; }
+    
+    public Identity.Document? Document { get; set; }
+    
+    public string? DocumentDetails { get; set; }
+    
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = null!;
+    public bool EmailConfirmed { get; set; } = false;
+    
+    [Required]
+    [DataType(DataType.Password)]
+    public string Password { get; set; } = null!;
+    
+    [DataType(DataType.PhoneNumber)]
+    public string? PhoneNumber { get; set; }
+    public bool? PhoneNumberConfirmed { get; set; } = false;
+
+    public virtual IList<string> Roles { get; set; } = null!;
 }
 
 public class UpdateUserDto
@@ -41,23 +75,54 @@ public class UpdateUserDto
     [Required]
     public string Id { get; set; } = null!;
     
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-
-    public string UserName { get; set; } = null!;
+    [Required]
+    public string FirstName { get; set; } = null!;
     
+    [Required]
+    public string LastName { get; set; } = null!;
+    
+    [Required]
+    public string Patronymic { get; set; } = null!;
+    
+    [Required]
+    [DataType(DataType.Date)]
+    public DateTime? BirthDate { get; set; }
+    
+    [Required]
+    public Identity.Gender? Gender { get; set; }
+    
+    [Required]
+    public Identity.Document? Document { get; set; }
+    
+    [Required]
+    public string? DocumentDetails { get; set; }
+    
+    [Required]
     [EmailAddress]
     public string Email { get; set; } = null!;
-    public bool EmailConfirmed { get; set; }
+    public bool EmailConfirmed { get; set; } = false;
     
     [DataType(DataType.Password)]
-    public string Password { get; set; } = null!;
-    [DataType(DataType.Password)]
-    [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-    public string ConfirmPassword { get; set; } = null!;
+    public string? Password { get; set; } = null!;
     
+    [Required]
+    [DataType(DataType.PhoneNumber)]
     public string? PhoneNumber { get; set; }
-    public bool PhoneNumberConfirmed { get; set; }
+    [Required]
+    public bool PhoneNumberConfirmed { get; set; } = false;
+
+    public virtual IList<string> Roles { get; set; } = null!;
+}
+
+public class StrippedUserDto
+{
+    public string Id { get; set; } = null!;
     
-    public virtual IList<string> RoleIds { get; set; } = new List<string> { "User" };
+    public string FirstName { get; set; } = null!;
+    
+    public string LastName { get; set; } = null!;
+    
+    public string Patronymic { get; set; } = null!;
+    
+    public Identity.Gender? Gender { get; set; }
 }

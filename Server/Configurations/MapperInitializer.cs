@@ -1,3 +1,4 @@
+using System.Dynamic;
 using AutoMapper;
 using Server.Models;
 using SharedModels.DataTransferObjects;
@@ -82,10 +83,16 @@ public class MapperInitializer : Profile
         CreateMap<VehicleEnrollment, VehicleEnrollmentWithDetailsDto>().ReverseMap();
         CreateMap<VehicleEnrollment, CreateVehicleEnrollmentWithDetailsDto>().ReverseMap();
         CreateMap<VehicleEnrollment, InReviewVehicleEnrollmentDto>();
-        
+
         CreateMap<User, UserDto>().ReverseMap();
         CreateMap<User, CreateUserDto>().ReverseMap();
         CreateMap<User, UpdateUserDto>().ReverseMap();
+        CreateMap<User, StrippedUserDto>().ReverseMap();
+        
+        CreateMap<User, DriverDto>().ForMember(d => d.CompanyId, o => o.MapFrom(s => s.Employer.CompanyId));
+        CreateMap<UserDto, DriverDto>().ReverseMap();
+        CreateMap<CreateUserDto, CreateDriverDto>().ReverseMap();
+        CreateMap<CreateDriverDto, UpdateDriverDto>().ReverseMap();
         
         CreateMap<RouteAddressDetails, RouteAddressDetailsDto>().ReverseMap();
         CreateMap<RouteAddressDetails, CreateRouteAddressDetailsDto>().ReverseMap();
