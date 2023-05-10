@@ -153,7 +153,9 @@ public class AddressManagementService : IAddressManagementService
             }
         }
 
-        var dbAddress = await _dbContext.Addresses.FirstAsync(a => a.Id == address.Id);
+        var dbAddress = await _dbContext.Addresses.Where(a => a.Id == address.Id)
+            .Include(a => a.City).ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country).FirstAsync();
         
         return (true, null, _mapper.Map<AddressDto>(dbAddress));
     }

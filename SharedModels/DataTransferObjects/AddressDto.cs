@@ -36,6 +36,7 @@ public class InCityAddressDto
     public string Name { get; set; } = null!;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+    public int CityId { get; set; }
 }
 
 public class CreateAddressInRouteAddress

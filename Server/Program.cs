@@ -56,8 +56,7 @@ services.AddSwaggerGen(options => {
 });
 
 services.AddCors(options => {
-    options.AddDefaultPolicy(policy => policy.AllowAnyOrigin()
-        .AllowAnyHeader().AllowAnyMethod());
+    options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
 services.AddIdentityCore<User>(options =>
@@ -146,7 +145,7 @@ services.AddScoped<IDataShaper<ExpandoObject>, DataShaper<ExpandoObject>>();
 services.AddScoped<ISortHelper<ExpandoObject>, SortHelper<ExpandoObject>>();
 services.AddScoped<IPager<ExpandoObject>, Pager<ExpandoObject>>();
 
-services.AddScoped<AutomationService>();
+services.AddScoped<VehicleEnrollmentSearchService>();
 services.AddScoped<IReportService, ReportService>();
 services.AddScoped<IStatisticsService, StatisticsService>();
 
@@ -170,7 +169,7 @@ if (Convert.ToBoolean(configuration["UseApiExplorer"]))
 }
 
 /*
-app.UseHttpsRedirection();
+pp.UseHttpsRedirection();
 */
 
 app.UseAuthentication();

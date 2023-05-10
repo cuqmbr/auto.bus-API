@@ -4,23 +4,21 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
 using Server.Models;
+using SharedModels.Responses;
 
 namespace Server.Services;
 
-public class AutomationService
+public class VehicleEnrollmentSearchService
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly ISortHelper<ExpandoObject> _sortHelper;
 
-    public AutomationService(ApplicationDbContext dbContext, 
-        ISortHelper<ExpandoObject> sortHelper)
+    public VehicleEnrollmentSearchService(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
-        _sortHelper = sortHelper;
     }
 
-    public async Task<(bool isSucceed, IActionResult? actionResult, List<ExpandoObject> result)> GetRoute(
-        int from, int to, DateTime date)
+    public async Task<(bool isSucceed, IActionResult? actionResult, IList<EnrollmentGroup> result)>
+        GetRoute(int fromCityId, int toCityId, DateTime date)
     {
         var dbEnrollments = await _dbContext.VehicleEnrollments
             .Include(ve => ve.Tickets)
@@ -36,20 +34,20 @@ public class AutomationService
 
         var toBeRemovedEnrollmentsIds = new List<int>();
         
+        // Find routes without transfers
+        
         var directEnrollments = new List<VehicleEnrollment>();
 
         foreach (var e in dbEnrollments)
         {
-            if (e.Route.RouteAddresses.Count(ra => ra.AddressId == from) == 0 ||
-                e.Route.RouteAddresses.Count(ra => ra.AddressId == to) == 0)
+            if (e.Route.RouteAddresses.Count(ra => ra.Address.CityId == fromCityId) == 0 ||
+                e.Route.RouteAddresses.Count(ra => ra.Address.CityId == toCityId) == 0)
             {
                     continue;
             }
             
-            var fromOrder = e.Route.RouteAddresses.FirstOrDefault(rad => 
-                rad.AddressId == from)?.Order;
-            var toOrder = e.Route.RouteAddresses.FirstOrDefault(rad => 
-                rad.AddressId == to)?.Order;
+            var fromOrder = e.Route.RouteAddresses.First(ra => ra.Address.CityId == fromCityId).Order;
+            var toOrder = e.Route.RouteAddresses.First(ra => ra.Address.CityId == toCityId).Order;
                 
             if (fromOrder < toOrder)
             {
@@ -65,10 +63,8 @@ public class AutomationService
         {
             var routeAddresses = de.Route.RouteAddresses;
             
-            var fromOrder = 
-                routeAddresses.First(ra => ra.AddressId == from).Order;
-            var toOrder = 
-                routeAddresses.First(ra => ra.AddressId == to).Order;
+            var fromOrder = routeAddresses.First(ra => ra.Address.CityId == fromCityId).Order;
+            var toOrder = routeAddresses.First(ra => ra.Address.CityId == toCityId).Order;
 
             directEnrollments[directEnrollments.IndexOf(de)].Route.RouteAddresses = routeAddresses
                 .OrderBy(ra => ra.Order)
@@ -80,18 +76,20 @@ public class AutomationService
                 .DepartureDateTimeUtc = GetDepartureTime(de);
         }
         
+        // Find routes with one transfer
         
+        // Find enrollments with departure city
         
         var enrollmentsWithFrom = new List<VehicleEnrollment>();
         
         foreach (var e in dbEnrollments)
         {
-            if (e.Route.RouteAddresses.Count(ra => ra.AddressId == from) == 0)
+            if (e.Route.RouteAddresses.Count(ra => ra.Address.CityId == fromCityId) == 0)
             {
                 continue;
             }
             
-            if (e.Route.RouteAddresses.Any(ra => ra.AddressId == from))
+            if (e.Route.RouteAddresses.Any(ra => ra.Address.CityId == fromCityId))
             {
                 enrollmentsWithFrom.Add(e);
                 toBeRemovedEnrollmentsIds.Add(e.Id);
@@ -105,25 +103,25 @@ public class AutomationService
         {
             var routeAddresses = ef.Route.RouteAddresses;
 
-            var fromOrder = 
-                routeAddresses.First(ra => ra.AddressId == from).Order;
+            var fromOrder = routeAddresses.First(ra => ra.Address.CityId == fromCityId).Order;
 
             enrollmentsWithFrom[enrollmentsWithFrom.IndexOf(ef)].Route.RouteAddresses = routeAddresses
                 .OrderBy(ra => ra.Order)
                 .SkipWhile(ra => ra.Order < fromOrder).ToList();
         }
         
+        // Find enrollments with arrival city
         
         var enrollmentsWithTo = new List<VehicleEnrollment>();
         
         foreach (var e in dbEnrollments)
         {
-            if (e.Route.RouteAddresses.Count(ra => ra.AddressId == to) == 0)
+            if (e.Route.RouteAddresses.Count(ra => ra.Address.CityId == toCityId) == 0)
             {
                 continue;
             }
             
-            if (e.Route.RouteAddresses.Any(ra => ra.AddressId == to))
+            if (e.Route.RouteAddresses.Any(ra => ra.Address.CityId == toCityId))
             {
                 enrollmentsWithTo.Add(e);
                 toBeRemovedEnrollmentsIds.Add(e.Id);
@@ -137,14 +135,16 @@ public class AutomationService
         {
             var routeAddresses = et.Route.RouteAddresses;
 
-            var toOrder = 
-                routeAddresses.First(ra => ra.AddressId == to).Order;
+            var toOrder = routeAddresses.First(ra => ra.Address.CityId == toCityId).Order;
 
             enrollmentsWithTo[enrollmentsWithTo.IndexOf(et)].Route.RouteAddresses = routeAddresses
                 .OrderBy(ra => ra.Order)
                 .TakeWhile(ra => ra.Order <= toOrder).ToList();
         }
         
+        // Find intersection of
+        // enrollments with only departure city and
+        // enrollments with only arrival city
         
         var oneTransferPath = new List<List<VehicleEnrollment>>();
 
@@ -159,10 +159,13 @@ public class AutomationService
                     etRouteAddresses.Select(x => x.AddressId),
                     x => x.AddressId).FirstOrDefault()?.AddressId;
 
-                var toOrder = efRouteAddresses.First(ra => 
-                        ra.AddressId == intersectionAddressId).Order;
-                var fromOrder = etRouteAddresses.First(ra => 
-                    ra.AddressId == intersectionAddressId).Order;
+                if (intersectionAddressId == null)
+                {
+                    continue;
+                }
+
+                var toOrder = efRouteAddresses.First(ra => ra.AddressId == intersectionAddressId).Order;
+                var fromOrder = etRouteAddresses.First(ra => ra.AddressId == intersectionAddressId).Order;
 
                 enrollmentsWithFrom[enrollmentsWithFrom.IndexOf(ef)].Route.RouteAddresses =
                     efRouteAddresses.OrderBy(ra => ra.Order)
@@ -182,69 +185,69 @@ public class AutomationService
                 }
             }
         }
+        
+        // Combine enrollments with transfers and enrollments without transfers
 
         foreach (var directEnrollment in directEnrollments)
         {
             oneTransferPath.Add(new List<VehicleEnrollment> {directEnrollment});
         }
         
-        var result = new List<ExpandoObject>();
+        // Form an object that will be returned
+        
+        var result = new SearchEnrollmentResponse();
 
-        int i = 1;
         foreach (var path in oneTransferPath)
         {
-            
-            var shapedPath = new ExpandoObject();
-            var enrollmentGroup = new ExpandoObject();
-
+            var enrollmentGroup = new EnrollmentGroup();
             int j = 1;
             foreach (var vehicleEnrollment in path)
             {
-                var enrollment = new ExpandoObject();
+                enrollmentGroup.Enrollments.Add(new FlattenedEnrollment
+                {
+                    Id = vehicleEnrollment.Id,
+                    
+                    DepartureAddressId = vehicleEnrollment.Route.RouteAddresses.First().AddressId,
+                    DepartureTime = GetDepartureTime(vehicleEnrollment),
+                    DepartureAddressName = vehicleEnrollment.Route.RouteAddresses.First().Address.Name,
+                    DepartureCityName = vehicleEnrollment.Route.RouteAddresses.First().Address.City.Name,
+                    DepartureStateName = vehicleEnrollment.Route.RouteAddresses.First().Address.City.State.Name,
+                    DepartureCountryName = vehicleEnrollment.Route.RouteAddresses.First().Address.City.State.Country.Name,
+                    DepartureAddressFullName = vehicleEnrollment.Route.RouteAddresses.First().Address.GetFullName(),
+                    
+                    ArrivalAddressId = vehicleEnrollment.Route.RouteAddresses.Last().AddressId,
+                    ArrivalTime = GetArrivalTime(vehicleEnrollment),
+                    ArrivalAddressName = vehicleEnrollment.Route.RouteAddresses.Last().Address.Name,
+                    ArrivalCityName = vehicleEnrollment.Route.RouteAddresses.Last().Address.City.Name,
+                    ArrivalStateName = vehicleEnrollment.Route.RouteAddresses.Last().Address.City.State.Name,
+                    ArrivalCountryName = vehicleEnrollment.Route.RouteAddresses.Last().Address.City.State.Country.Name,
+                    ArrivalAddressFullName = vehicleEnrollment.Route.RouteAddresses.Last().Address.GetFullName(),
+                    
+                    Order = j,
+                    
+                    VehicleId = vehicleEnrollment.VehicleId,
+                    VehicleNumber = vehicleEnrollment.Vehicle.Number,
+                    VehicleType = vehicleEnrollment.Vehicle.Type,
+                    
+                    CompanyId = vehicleEnrollment.Vehicle.CompanyId,
+                    CompanyName = vehicleEnrollment.Vehicle.Company.Name
+                });
 
-                enrollment.TryAdd("id", vehicleEnrollment.Id);
-                enrollment.TryAdd("departureTime", GetDepartureTime(vehicleEnrollment));
-                enrollment.TryAdd("arrivalTime", GetArrivalTime(vehicleEnrollment));
-                enrollment.TryAdd("departureAddressName", vehicleEnrollment.Route.RouteAddresses.First().Address.Name);
-                enrollment.TryAdd("departureAddressFullName", vehicleEnrollment.Route.RouteAddresses.First().Address.GetFullName());
-                enrollment.TryAdd("departureAddressId", vehicleEnrollment.Route.RouteAddresses.First().AddressId);
-                enrollment.TryAdd("arrivalAddressName", vehicleEnrollment.Route.RouteAddresses.Last().Address.Name);
-                enrollment.TryAdd("arrivalAddressFullName", vehicleEnrollment.Route.RouteAddresses.Last().Address.GetFullName());
-                enrollment.TryAdd("arrivalAddressId", vehicleEnrollment.Route.RouteAddresses.Last().AddressId);
-                enrollment.TryAdd("order", j);
-
-                var vehicle = new ExpandoObject();
-
-                vehicle.TryAdd("type", vehicleEnrollment.Vehicle.Type);
-                vehicle.TryAdd("number", vehicleEnrollment.Vehicle.Number);
-                
-                enrollment.TryAdd("vehicle", vehicle);
-                
-                var company = new ExpandoObject();
-
-                company.TryAdd("name", vehicleEnrollment.Vehicle.Company.Name);
-                
-                enrollment.TryAdd("company", company);
-                
-                
-                
-                enrollmentGroup.TryAdd($"enrollment{j}", enrollment);
-                
                 j++;
             }
 
-            enrollmentGroup.TryAdd("totalDuration", GetTotalDuration(path));
-            enrollmentGroup.TryAdd("totalCost", GetTotalCost(path));
+            enrollmentGroup.Cost = GetTotalCost(path);
+            enrollmentGroup.Duration = GetTotalDuration(path);
             
-            shapedPath.TryAdd($"enrollmentGroup{i}", enrollmentGroup);
-            result.Add(shapedPath);
-
-            i++;
+            result.EnrollmentGroups.Add(enrollmentGroup);
         }
 
-        // result = _sortHelper.ApplySort(result[].AsQueryable(), "+cost").ToList();
+        if (result.EnrollmentGroups.Count == 0)
+        {
+            return (false, new NotFoundResult(), null!);
+        }
         
-        return (true, null, result);
+        return (true, null, result.EnrollmentGroups);
 
         DateTime GetDepartureTime(VehicleEnrollment enrollment)
         {
