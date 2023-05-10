@@ -14,8 +14,8 @@ public class ReportController : ControllerBase
         _reportService = reportService;
     }
 
-    [HttpGet("ticket")]
-    public async Task<IActionResult> GetTicket(int ticketGroupId)
+    [HttpGet("pdf/ticket")]
+    public async Task<IActionResult> GetTicketPdf(int ticketGroupId)
     {
         var result = await _reportService.GetTicket(ticketGroupId);
         
@@ -24,21 +24,45 @@ public class ReportController : ControllerBase
             return BadRequest(result.actionResult);
         }
 
-        return File(result.ticketPdf, "application/pdf",
-            $"ticket.pdf");
+        return File(result.ticketPdf, "application/pdf", $"ticket.pdf");
     }
     
-    [HttpGet("report")]
-    public async Task<IActionResult> GetCompanyReport(int companyId, DateTime fromDate, DateTime toDate)
+    [HttpGet("pdf/company")]
+    public async Task<IActionResult> GetCompanyReportPdf(int companyId, DateTime fromDate, DateTime toDate)
     {
-        var result = await _reportService.GetCompanyReport(companyId, fromDate, toDate);
+        var result = await _reportService.GetCompanyReportPdf(companyId, fromDate, toDate);
         
         if (!result.isSucceed)
         {
             return BadRequest(result.actionResult);
         }
 
-        return File(result.reportPdf, "application/pdf",
-            $"report.pdf");
+        return File(result.reportPdf, "application/pdf", $"report.pdf");
+    }
+    
+    [HttpGet("raw/company")]
+    public async Task<IActionResult> GetCompanyReportRaw(int companyId, DateTime fromDate, DateTime toDate)
+    {
+        var result = await _reportService.GetCompanyReportRaw(companyId, fromDate, toDate);
+        
+        if (!result.isSucceed)
+        {
+            return BadRequest(result.actionResult);
+        }
+
+        return Ok(result.statistics);
+    }
+    
+    [HttpGet("raw/admin")]
+    public async Task<IActionResult> GetAdminReportRaw(DateTime fromDate, DateTime toDate)
+    {
+        var result = await _reportService.GetAdminReportRaw(fromDate, toDate);
+        
+        if (!result.isSucceed)
+        {
+            return BadRequest(result.actionResult);
+        }
+
+        return Ok(result.statistics);
     }
 }

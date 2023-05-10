@@ -8,6 +8,7 @@ using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using Server.Data;
 using Server.Models;
+using SharedModels.Responses;
 using Route = Server.Models.Route;
 
 namespace Server.Services;
@@ -223,14 +224,7 @@ public class ReportService : IReportService
             for (var i = 0; i < ticketGroup.Tickets.Count; i++)
             {
                 var ticket = ticketGroup.Tickets[i];
-                
                 var vehicle = ticket.VehicleEnrollment.Vehicle;
-
-                var departureDateTimeUtc = GetDepartureTime(ticket);
-                var arrivalDateTimeUtc = GetArrivalTime(ticket);
-
-                var departureAddress = GetDepartureAddress(ticket);
-                var arrivalAddress = GetArrivalAddress(ticket);
 
                 row = table.AddRow();
                 table.AddRow();
@@ -251,12 +245,12 @@ public class ReportService : IReportService
 
                 row.Cells[2].MergeRight = 1;
                 row.Cells[2].MergeDown = 1;
-                row.Cells[2].AddParagraph($"{departureDateTimeUtc:dd.MM.yyyy HH:mm}");
+                row.Cells[2].AddParagraph($"{ticket.GetDepartureTime():dd.MM.yyyy HH:mm}");
 
                 row.Cells[4].MergeRight = 3;
                 row.Cells[4].MergeDown = 1;
                 row.Cells[4].Format.Font.Size = 8;
-                row.Cells[4].AddParagraph($"{departureAddress.GetFullName()}");
+                row.Cells[4].AddParagraph($"{ticket.GetDepartureAddress().GetFullName()}");
 
                 row.Cells[8].MergeRight = 1;
                 row.Cells[8].MergeDown = 1;
@@ -285,12 +279,12 @@ public class ReportService : IReportService
 
                 row.Cells[2].MergeRight = 1;
                 row.Cells[2].MergeDown = 1;
-                row.Cells[2].AddParagraph($"{arrivalDateTimeUtc:dd.MM.yyyy HH:mm}");
+                row.Cells[2].AddParagraph($"{ticket.GetArrivalTime():dd.MM.yyyy HH:mm}");
 
                 row.Cells[4].MergeRight = 3;
                 row.Cells[4].MergeDown = 1;
                 row.Cells[4].Format.Font.Size = 8;
-                row.Cells[4].AddParagraph($"{arrivalAddress.GetFullName()}");
+                row.Cells[4].AddParagraph($"{ticket.GetArrivalAddress().GetFullName()}");
 
                 row.Cells[8].MergeRight = 1;
                 row.Cells[8].MergeDown = 1;
@@ -302,8 +296,8 @@ public class ReportService : IReportService
 
                 if (!ticketGroup.Tickets.Last().Equals(ticket))
                 {
-                    var nextDepartureTimeUtc = GetDepartureTime(ticketGroup.Tickets[i + 1]);
-                    var freeTime = nextDepartureTimeUtc - arrivalDateTimeUtc;
+                    var nextDepartureTime = ticketGroup.Tickets[i + 1].GetDepartureTime();
+                    var freeTime = nextDepartureTime - ticket.GetArrivalTime();
                     
                     row = table.AddRow();
                     table.AddRow();
@@ -316,7 +310,7 @@ public class ReportService : IReportService
 
                     row.Cells[3].MergeRight = 5;
                     row.Cells[3].MergeDown = 1;
-                    row.Cells[3].AddParagraph($"{arrivalDateTimeUtc:dd.MM.yyyy HH:mm} – {nextDepartureTimeUtc:dd.MM.yyyy HH:mm}");
+                    row.Cells[3].AddParagraph($"{ticket.GetArrivalTime():dd.MM.yyyy HH:mm} – {nextDepartureTime:dd.MM.yyyy HH:mm}");
 
                     row.Cells[9].MergeRight = 2;
                     row.Cells[9].MergeDown = 1;
@@ -336,10 +330,6 @@ public class ReportService : IReportService
             
             foreach (var ticket in ticketGroup.Tickets)
             {
-                var departureAddress = GetDepartureAddress(ticket);
-                var arrivalAddress = GetArrivalAddress(ticket);
-                var cost = GetTicketCost(ticket);
-                
                 row = table.AddRow();
                 table.AddRow();
                 row.Shading.Color = isFilled ? Color.FromRgbColor(25, Colors.Black) : Colors.White;
@@ -351,7 +341,7 @@ public class ReportService : IReportService
                 row.Cells[1].MergeRight = 3;
                 row.Cells[1].MergeDown = 1;
                 row.Cells[1].Format.Font.Size = 8;
-                row.Cells[1].AddParagraph($"{departureAddress.GetFullName()}");
+                row.Cells[1].AddParagraph($"{ticket.GetDepartureAddress().GetFullName()}");
                 
                 row.Cells[5].MergeDown = 1;
                 row.Cells[5].AddParagraph("Куди");
@@ -359,17 +349,15 @@ public class ReportService : IReportService
                 row.Cells[6].MergeRight = 3;
                 row.Cells[6].MergeDown = 1;
                 row.Cells[6].Format.Font.Size = 8;
-                row.Cells[6].AddParagraph($"{arrivalAddress.GetFullName()}");
+                row.Cells[6].AddParagraph($"{ticket.GetArrivalAddress().GetFullName()}");
 
                 row.Cells[10].MergeDown = 1;
                 row.Cells[10].AddParagraph("Ціна");
 
                 row.Cells[11].MergeDown = 1;
-                row.Cells[11].AddParagraph($"{cost}");
+                row.Cells[11].AddParagraph($"{ticket.GetCost()}");
             }
 
-            var totalCost = GetTicketGroupCost(ticketGroup);
-            
             row = table.AddRow();
             row.Shading.Color = isFilled ? Color.FromRgbColor(25, Colors.Black) : Colors.White;
             isFilled = !isFilled;
@@ -380,113 +368,12 @@ public class ReportService : IReportService
 
             row.Cells[10].Borders.Right.Color = Colors.Transparent;
             
-            row.Cells[11].AddParagraph($"{totalCost}");
-        }
-
-        DateTime GetDepartureTime(Ticket ticket)
-        {
-            var departureDateTimeUtc = ticket.VehicleEnrollment.DepartureDateTimeUtc;
-
-            var routeAddresses = ticket.VehicleEnrollment.Route.RouteAddresses
-                .OrderBy(ra => ra.Order).ToArray();
-            
-            foreach (var routeAddress in routeAddresses)
-            {
-                var details = routeAddress.RouteAddressDetails
-                    .First(rad => rad.RouteAddressId == routeAddress.Id);
-                
-                if (routeAddress.AddressId == ticket.FirstRouteAddressId)
-                {
-                    departureDateTimeUtc += details.WaitTimeSpan;
-                    break;
-                }
-
-                departureDateTimeUtc += details.TimeSpanToNextCity;
-                departureDateTimeUtc += details.WaitTimeSpan;
-            }
-
-            return departureDateTimeUtc;
-        }
-
-        DateTime GetArrivalTime(Ticket ticket)
-        {
-            var arrivalDateTimeUtc = ticket.VehicleEnrollment.DepartureDateTimeUtc;
-            
-            var routeAddresses = ticket.VehicleEnrollment.Route.RouteAddresses
-                .OrderBy(ra => ra.Order).ToArray();
-            
-            foreach (var routeAddress in routeAddresses)
-            {
-                var details = routeAddress.RouteAddressDetails
-                    .First(rad => rad.RouteAddressId == routeAddress.Id);
-                
-                if (routeAddress.AddressId == ticket.LastRouteAddressId)
-                {
-                    break;
-                }
-
-                arrivalDateTimeUtc += details.TimeSpanToNextCity;
-                arrivalDateTimeUtc += details.WaitTimeSpan;
-            }
-
-            return arrivalDateTimeUtc;
-        }
-
-        Address GetDepartureAddress(Ticket ticket)
-        {
-            return ticket.VehicleEnrollment.Route.RouteAddresses
-                .First(ra => ra.AddressId == ticket.FirstRouteAddressId)
-                .Address;
-        }
-
-        Address GetArrivalAddress(Ticket ticket)
-        {
-            return ticket.VehicleEnrollment.Route.RouteAddresses
-                .First(ra => ra.AddressId == ticket.LastRouteAddressId)
-                .Address;
-        }
-
-        double GetTicketCost(Ticket ticket)
-        {
-            double cost = 0;
-
-            var routeAddresses = ticket.VehicleEnrollment.Route.RouteAddresses
-                .OrderBy(ra => ra.Order)
-                .SkipWhile(ra => ra.AddressId != ticket.FirstRouteAddressId)
-                .TakeWhile(ra => ra.AddressId != ticket.LastRouteAddressId)
-                .ToArray();
-            
-            foreach (var routeAddress in routeAddresses)
-            {
-                var details = routeAddress.RouteAddressDetails
-                    .First(rad => rad.RouteAddressId == routeAddress.Id);
-                
-                cost += details.CostToNextCity;
-            }
-            
-            return cost;
-        }
-
-        double GetTicketGroupCost(TicketGroup ticketGroup)
-        {
-            double cost = 0;
-
-            foreach (var ticket in ticketGroup.Tickets)
-            {
-                cost += GetTicketCost(ticket);
-            }
-
-            return cost;
-        }
-
-        async Task<bool> DoesTicketGroupExist(int id)
-        {
-            return await _dbContext.TicketGroups.AnyAsync(tg => tg.Id == id);
+            row.Cells[11].AddParagraph($"{ticketGroup.GetCost()}");
         }
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, Stream reportPdf)> 
-        GetCompanyReport(int companyId, DateTime fromDate, DateTime toDate)
+        GetCompanyReportPdf(int companyId, DateTime fromDate, DateTime toDate)
     {
         if (!await DoesCompanyExist(companyId))
         {
@@ -726,22 +613,22 @@ public class ReportService : IReportService
                 row.Shading.Color = Color.FromRgbColor(25, Colors.Black);
 
                 row.Cells[0].MergeRight = 1;
-                row.Cells[0].AddParagraph($"{GetRouteEnrollmentCount(route)}");
+                row.Cells[0].AddParagraph($"{route.GetEnrollmentCount()}");
 
                 row.Cells[2].MergeRight = 1;
-                row.Cells[2].AddParagraph($"{GetRouteCanceledEnrollmentCount(route)}");
+                row.Cells[2].AddParagraph($"{route.GetCanceledEnrollmentCount()}");
 
                 row.Cells[4].MergeRight = 1;
-                row.Cells[4].AddParagraph($"{GetRouteSelledTicketCount(route)}");
+                row.Cells[4].AddParagraph($"{route.GetSoldTicketCount()}");
 
                 row.Cells[6].MergeRight = 1;
-                row.Cells[6].AddParagraph($"{GetRouteIndirectTicketCount(route)}");
+                row.Cells[6].AddParagraph($"{route.GetIndirectTicketCount()}");
 
                 row.Cells[8].MergeRight = 1;
-                row.Cells[8].AddParagraph($"{GetRouteTotalRevenu(route)}");
+                row.Cells[8].AddParagraph($"{route.GetTotalRevenue()}");
 
                 row.Cells[10].MergeRight = 1;
-                var routeAverageRating = GetRouteAvarageRating(route);
+                var routeAverageRating = route.GetAverageRating();
                 row.Cells[10].AddParagraph($"{(routeAverageRating == 0 ? "-" : routeAverageRating)}");
                 
                 row = table.AddRow();
@@ -783,21 +670,23 @@ public class ReportService : IReportService
                     row.Cells[0].MergeRight = 2;
                     row.Cells[0].AddParagraph($"{vehicle.Id}, {vehicle.Type}, {vehicle.Number}");
 
-                    var executedEnrollmentCount = GetVehicleEnrollmentCount(vehicle, route.Id);
-                    var canceledEnrollmentCount = GetVehicleCanceledEnrollmentCount(vehicle, route.Id);
+                    var executedEnrollmentCount = vehicle.GetEnrollmentCount(route.Id);
+                    var canceledEnrollmentCount = vehicle.GetCanceledEnrollmentCount(route.Id);
                     row.Cells[3].MergeRight = 1;
                     row.Cells[3].AddParagraph($"{executedEnrollmentCount + canceledEnrollmentCount}, " +
                                               $"{executedEnrollmentCount}, {canceledEnrollmentCount}");
 
                     row.Cells[5].MergeRight = 2;
-                    row.Cells[5].AddParagraph($"{GetVehicleSelledTicketCount(vehicle, route.Id)}, {GetVehicleReturnedTicketCount(vehicle, route.Id)}; " +
-                                              $"{GetVehicleIndirectTicketCount(vehicle, route.Id)}, {GetVehicleReturnedIndirectTicketCount(vehicle, route.Id)}");
+                    row.Cells[5].AddParagraph($"{vehicle.GetSoldTicketCount(route.Id)}, " +
+                                              $"{vehicle.GetReturnedTicketCount(route.Id)}; " +
+                                              $"{vehicle.GetIndirectTicketCount(route.Id)}, " +
+                                              $"{vehicle.GetReturnedIndirectTicketCount(route.Id)}");
 
                     row.Cells[8].MergeRight = 1;
-                    row.Cells[8].AddParagraph($"{GetVehicleTotalRevenue(vehicle, route.Id)}");
+                    row.Cells[8].AddParagraph($"{vehicle.GetTotalRevenue(route.Id)}");
 
                     row.Cells[10].MergeRight = 1;
-                    var vehicleAverageRating = GetVehicleAverageRating(vehicle, route.Id);
+                    var vehicleAverageRating = vehicle.GetAverageRating(route.Id);
                     row.Cells[10].AddParagraph($"{(vehicleAverageRating == 0 ? "-" : vehicleAverageRating)}");
                 }
                 
@@ -812,372 +701,140 @@ public class ReportService : IReportService
             paragraph.Format.Font.Bold = true;
             section.AddParagraph();
 
-            var totalEnrollmentCount = GetTotalEnrollmentCount(dbCompany);
-            var totalCanceledEnrollmentCount = GetTotalCanceledEnrollmentCount(dbCompany);
-            var totalSoldTicketCount = GetTotalSoldTickets(dbCompany);
-            var totalReturnedTicketCount = GetTotalReturnedTicketCount(dbCompany);
-            var totalRevenue = GetTotalRevenu(dbCompany);
-            var totalAverageRating = GetTotalAverageRating(dbCompany);
-
             paragraph = section.AddParagraph(
                 $"У період з {fromDate:dd.MM.yyyy} по {toDate:dd.MM.yyyy} " +
                 $"({(toDate - fromDate).Days} днів) компанією {dbCompany.Name} " +
-                $"було заплановано {(totalEnrollmentCount)} поїздки, " +
-                $"з яких {totalCanceledEnrollmentCount} було скасовано, " +
-                $"продано {totalSoldTicketCount} квитків, " +
-                $"з яких {totalReturnedTicketCount} було повернено. " +
-                $"За цей час було зароблено {totalRevenue} гривень. " +
-                $"Середній рейтинг по всім поїздкам: {totalAverageRating}");
+                $"було заплановано {dbCompany.GetTotalEnrollmentCount()} поїздки, " +
+                $"з яких {dbCompany.GetTotalCanceledEnrollmentCount()} було скасовано, " +
+                $"продано {dbCompany.GetTotalSoldTicketCount()} квитків, " +
+                $"з яких {dbCompany.GetTotalReturnedTicketCount()} було повернено. " +
+                $"За цей час було зароблено {dbCompany.GetTotalRevenue()} гривень. " +
+                $"Середній рейтинг по всім поїздкам: {dbCompany.GetTotalAverageRating()}");
             paragraph.Format.Alignment = ParagraphAlignment.Justify;
             paragraph.Format.Font.Size = 14;
-            
-            int GetRouteEnrollmentCount(Route route)
-            {
-                return route.VehicleEnrollments.Count(ve => !ve.IsCanceled);
-            }
-
-            int GetVehicleEnrollmentCount(Vehicle vehicle, int routeId)
-            {
-                return vehicle.VehicleEnrollments.Count(ve =>
-                    !ve.IsCanceled && ve.RouteId == routeId);
-            }
-
-            int GetTotalEnrollmentCount(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleEnrollmentCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-            
-            int GetRouteCanceledEnrollmentCount(Route route)
-            {
-                return route.VehicleEnrollments.Count(ve => ve.IsCanceled);
-            }
-            
-            int GetVehicleCanceledEnrollmentCount(Vehicle vehicle, int routeId)
-            {
-                return vehicle.VehicleEnrollments.Count(ve =>
-                    ve.IsCanceled && ve.RouteId == routeId);
-            }
-
-            int GetTotalCanceledEnrollmentCount(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleCanceledEnrollmentCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-
-            int GetRouteSelledTicketCount(Route route)
-            {
-                int result = 0;
-
-                foreach (var enrollment in route.VehicleEnrollments)
-                {
-                    result += enrollment.Tickets.Count(t => !t.IsReturned);
-                }
-
-                return result;
-            }
-
-            int GetVehicleSelledTicketCount(Vehicle vehicle, int routeId)
-            {
-                int result = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    result += enrollment.Tickets.Count(t => !t.IsReturned);
-                }
-
-                return result;
-            }
-
-            int GetTotalSoldTickets(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleSelledTicketCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-            
-            int GetVehicleReturnedTicketCount(Vehicle vehicle, int routeId)
-            {
-                int result = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    result += enrollment.Tickets.Count(t => t.IsReturned);
-                }
-
-                return result;
-            }
-
-            int GetTotalReturnedTicketCount(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleReturnedTicketCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-
-            int GetRouteIndirectTicketCount(Route route)
-            {
-                int result = 0;
-
-                int departureAddressId = route.RouteAddresses.First().AddressId;
-                int arrivalAddressId = route.RouteAddresses.Last().AddressId;
-                
-                foreach (var enrollment in route.VehicleEnrollments)
-                {
-                    result += enrollment.Tickets.Count(t => !t.IsReturned &&
-                        t.FirstRouteAddressId != departureAddressId ||
-                        t.LastRouteAddressId != arrivalAddressId);
-                }
-
-                return result;
-            }
-
-            int GetVehicleIndirectTicketCount(Vehicle vehicle, int routeId)
-            {
-                int result = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
-                    var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
-                    
-                    result += enrollment.Tickets.Count(t => !t.IsReturned &&
-                        t.FirstRouteAddressId != departureRouteAddressId ||
-                        t.LastRouteAddressId != arrivalRouteAddressId);
-                }
-
-                return result;
-            }
-
-            int GetTotalIndirectTicketCount(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleIndirectTicketCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-            
-            int GetVehicleReturnedIndirectTicketCount(Vehicle vehicle, int routeId)
-            {
-                int result = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
-                    var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
-                    
-                    result += enrollment.Tickets.Count(t => t.IsReturned &&
-                        (t.FirstRouteAddressId != departureRouteAddressId ||
-                        t.LastRouteAddressId != arrivalRouteAddressId));
-                }
-
-                return result;
-            }
-
-            int GetTotalReturnedIndirectTicketCount(Company company)
-            {
-                int result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleReturnedIndirectTicketCount(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-
-            double GetRouteTotalRevenu(Route route)
-            {
-                double result = 0;
-
-                foreach (var enrollment in route.VehicleEnrollments)
-                {
-                    foreach (var ticket in enrollment.Tickets)
-                    {
-                        result += GetTicketCost(ticket);
-                    }
-                }
-
-                return result;
-            }
-
-            double GetVehicleTotalRevenue(Vehicle vehicle, int routeId)
-            {
-                double result = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    foreach (var ticket in enrollment.Tickets)
-                    {
-                        result += GetTicketCost(ticket);
-                    }
-                }
-
-                return result;
-            }
-
-            double GetTotalRevenu(Company company)
-            {
-                double result = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        result += GetVehicleTotalRevenue(vehicle, enrollment.RouteId);
-                    }
-                }
-
-                return result;
-            }
-
-            double GetRouteAvarageRating(Route route)
-            {
-                double result = 0;
-                int reviewCount = 0;
-
-                foreach (var enrollment in route.VehicleEnrollments)
-                {
-                    if (enrollment.Reviews.Count == 0)
-                    {
-                        continue;
-                    }
-                    
-                    foreach (var review in enrollment.Reviews)
-                    {
-                        result += review.Rating;
-                        reviewCount += enrollment.Reviews.Count;  
-                    }
-                }
-
-                result /= reviewCount;
-                result = !Double.IsNaN(result) ? Math.Round(result, 3) : 0;
-                
-                return result;
-            }
-
-            double GetVehicleAverageRating(Vehicle vehicle, int routeId)
-            {
-                double result = 0;
-                int reviewCount = 0;
-
-                foreach (var enrollment in vehicle.VehicleEnrollments
-                             .Where(ve => ve.RouteId == routeId))
-                {
-                    reviewCount += enrollment.Reviews.Count;
-                    
-                    foreach (var review in enrollment.Reviews)
-                    {
-                        result += review.Rating;
-                    }
-                }
-
-                result /= reviewCount;
-                result = !Double.IsNaN(result) ? Math.Round(result, 3) : 0;
-
-                return Math.Round(result, 3);
-            }
-
-            double GetTotalAverageRating(Company company)
-            {
-                double result = 0;
-                int enrollmentCount = 0;
-
-                foreach (var vehicle in company.Vehicles)
-                {
-                    foreach (var enrollment in vehicle.VehicleEnrollments)
-                    {
-                        if (enrollment.Reviews.Count == 0)
-                        {
-                            continue;
-                        }
-                        
-                        result += GetVehicleAverageRating(vehicle, enrollment.RouteId);
-                        enrollmentCount++;
-                    }
-                }
-
-                result /= enrollmentCount;
-                result = !Double.IsNaN(result) ? Math.Round(result, 3) : 0;
-                
-                return result;
-            }
-            
-            // TODO: repeated function, yoinked from ticket generation
-            double GetTicketCost(Ticket ticket)
-            {
-                double cost = 0;
-
-                var routeAddresses = ticket.VehicleEnrollment.Route.RouteAddresses
-                    .OrderBy(ra => ra.Order)
-                    .SkipWhile(ra => ra.AddressId != ticket.FirstRouteAddressId)
-                    .TakeWhile(ra => ra.AddressId != ticket.LastRouteAddressId)
-                    .ToArray();
-            
-                foreach (var routeAddress in routeAddresses)
-                {
-                    var details = routeAddress.RouteAddressDetails
-                        .First(rad => rad.RouteAddressId == routeAddress.Id);
-                
-                    cost += details.CostToNextCity;
-                }
-            
-                return cost;
-            }
         }
-        
-        async Task<bool> DoesCompanyExist(int id)
+    }
+
+    public async Task<(bool isSucceed, IActionResult? actionResult, StatisticsResponse statistics)>
+        GetCompanyReportRaw(int companyId, DateTime fromDate, DateTime toDate)
+    {
+        if (!await DoesCompanyExist(companyId))
         {
-            return await _dbContext.Companies.AnyAsync(c => c.Id == id);
+            return (false, new NotFoundResult(), null!);
         }
+
+        var dbCompany = await _dbContext.Companies
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Reviews)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Tickets)
+            .ThenInclude(t => t.TicketGroup)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Route)
+            .ThenInclude(r => r.RouteAddresses)
+            .ThenInclude(ra => ra.Address)
+            .ThenInclude(a => a.City)
+            .ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.RouteAddressDetails)
+
+            .Select(c => new {
+                Company = c,
+                VehicleEnrollments = c.Vehicles
+                    .Select(v => new {
+                        Vehicle = v,
+                        VehicleEnrollments = v.VehicleEnrollments.Where(ve =>
+                            ve.DepartureDateTimeUtc.Date >= fromDate &&
+                            ve.DepartureDateTimeUtc <= toDate)
+                    })
+            })
+            .Select(o => o.Company)
+            .FirstAsync(c => c.Id == companyId);
+
+        var statistics = new StatisticsResponse
+        {
+            EnrollmentsPlanned = dbCompany.GetTotalEnrollmentCount(),
+            EnrollmentsCanceled = dbCompany.GetTotalCanceledEnrollmentCount(),
+            TicketsSold = dbCompany.GetTotalSoldTicketCount(),
+            TicketsReturned = dbCompany.GetTotalReturnedTicketCount(),
+            MoneyEarned = dbCompany.GetTotalRevenue(),
+            AverageRating = dbCompany.GetTotalAverageRating()
+        };
+
+        return (true, null, statistics);
+    }
+
+    public async Task<(bool isSucceed, IActionResult? actionResult, StatisticsResponse statistics)>
+        GetAdminReportRaw(DateTime fromDate, DateTime toDate)
+    {
+        var dbCompanies = await _dbContext.Companies
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Reviews)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Tickets)
+            .ThenInclude(t => t.TicketGroup)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.Route)
+            .ThenInclude(r => r.RouteAddresses)
+            .ThenInclude(ra => ra.Address)
+            .ThenInclude(a => a.City)
+            .ThenInclude(c => c.State)
+            .ThenInclude(s => s.Country)
+
+            .Include(c => c.Vehicles)
+            .ThenInclude(v => v.VehicleEnrollments)
+            .ThenInclude(ve => ve.RouteAddressDetails)
+
+            .Select(c => new
+            {
+                Company = c,
+                VehicleEnrollments = c.Vehicles
+                    .Select(v => new
+                    {
+                        Vehicle = v,
+                        VehicleEnrollments = v.VehicleEnrollments.Where(ve =>
+                            ve.DepartureDateTimeUtc.Date >= fromDate &&
+                            ve.DepartureDateTimeUtc <= toDate)
+                    })
+            })
+            .Select(o => o.Company)
+            .ToArrayAsync();
+
+        var statistics = new StatisticsResponse();
+
+        foreach (var company in dbCompanies)
+        {
+            statistics.EnrollmentsPlanned += company.GetTotalEnrollmentCount();
+            statistics.EnrollmentsCanceled += company.GetTotalCanceledEnrollmentCount();
+            statistics.TicketsSold += company.GetTotalSoldTicketCount();
+            statistics.TicketsReturned += company.GetTotalReturnedTicketCount();
+            statistics.MoneyEarned += company.GetTotalRevenue();
+            statistics.AverageRating += company.GetTotalAverageRating();
+        }
+
+        return (true, null, statistics);
+    }
+    
+    async Task<bool> DoesCompanyExist(int id)
+    {
+        return await _dbContext.Companies.AnyAsync(c => c.Id == id);
+    }
+    
+    async Task<bool> DoesTicketGroupExist(int id)
+    {
+        return await _dbContext.TicketGroups.AnyAsync(tg => tg.Id == id);
     }
 }

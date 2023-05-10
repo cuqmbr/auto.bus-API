@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SharedModels.Responses;
 
 namespace Server.Services;
 
@@ -8,5 +9,11 @@ public interface IReportService
         GetTicket(int ticketGroupId);
 
     Task<(bool isSucceed, IActionResult? actionResult, Stream reportPdf)> 
-        GetCompanyReport(int companyId, DateTime fromDate, DateTime toDate);
+        GetCompanyReportPdf(int companyId, DateTime fromDate, DateTime toDate);
+    
+    Task<(bool isSucceed, IActionResult? actionResult, StatisticsResponse statistics)> 
+        GetCompanyReportRaw(int companyId, DateTime fromDate, DateTime toDate);
+    
+    Task<(bool isSucceed, IActionResult? actionResult, StatisticsResponse statistics)> 
+        GetAdminReportRaw(DateTime fromDate, DateTime toDate);
 }
