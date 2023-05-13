@@ -46,7 +46,7 @@ public class StatisticsService : IStatisticsService
 
         var dbTicketGroupsArray = await _dbContext.TicketGroups
             .Include(tg => tg.Tickets)
-            .Where(tg => tg.Tickets.First().PurchaseDateTimeUtc >= fromDateUtc)
+            .Where(tg => tg.PurchaseDateTimeUtc >= fromDateUtc)
             .ToArrayAsync();
         
         var depArrCombCountDict = new Dictionary<(int, int), int>();
@@ -163,7 +163,7 @@ public class StatisticsService : IStatisticsService
             {
                 User = u,
                 TicketGroups = u.TicketGroups.Where(tg =>
-                    tg.Tickets.First().PurchaseDateTimeUtc >= fromDateUtc)
+                    tg.PurchaseDateTimeUtc >= fromDateUtc)
             })
             .OrderByDescending(o => o.TicketGroups.Count())
             .Take(parameters.Amount)
@@ -287,7 +287,7 @@ public class StatisticsService : IStatisticsService
 
         var dbTicketGroupsArray = await _dbContext.TicketGroups
             .Include(tg => tg.Tickets)
-            .Where(tg => tg.Tickets.First().PurchaseDateTimeUtc >= fromDateUtc)
+            .Where(tg => tg.PurchaseDateTimeUtc >= fromDateUtc)
             .ToArrayAsync();
 
         // Count appearances for each address id <Id, Count> 

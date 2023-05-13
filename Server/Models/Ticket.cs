@@ -16,11 +16,8 @@ public class Ticket
     public int VehicleEnrollmentId { get; set; }
     public VehicleEnrollment VehicleEnrollment { get; set; } = null!;
     
-    public DateTime PurchaseDateTimeUtc { get; set; } =  DateTime.UtcNow;
     public int FirstRouteAddressId { get; set; }
     public int LastRouteAddressId { get; set; }
-    public bool IsReturned { get; set; } = false;
-    public bool IsMissed { get; set; } = false;
     
     public double GetCost()
     {

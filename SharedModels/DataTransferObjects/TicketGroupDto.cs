@@ -5,6 +5,11 @@ namespace SharedModels.DataTransferObjects;
 public class TicketGroupDto : CreateTicketGroupDto
 {
     public int Id { get; set; }
+    
+    [DataType(DataType.DateTime)]
+    public DateTime PurchaseDateTime { get; set; }
+    
+    public bool IsReturned { get; set; }
 }
 
 public class CreateTicketGroupDto
@@ -20,6 +25,11 @@ public class UpdateTicketGroupDto
     
     [Required]
     public string UserId { get; set; } = null!;
+    
+    [DataType(DataType.DateTime)]
+    public DateTime PurchaseDateTime { get; set; }
+    
+    public bool IsReturned { get; set; } = false;
 }
 
 public class TicketGroupWithTicketsDto

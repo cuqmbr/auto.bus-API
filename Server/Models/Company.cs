@@ -17,7 +17,7 @@ public class Company
     public virtual IList<Vehicle> Vehicles { get; set; } = null!;
     public virtual IList<CompanyDriver> CompanyDrivers { get; set; } = null!;
     
-    public int GetTotalEnrollmentCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalEnrollmentCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -25,14 +25,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteEnrollmentCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteEnrollmentCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalCanceledEnrollmentCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalCanceledEnrollmentCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -40,14 +40,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteCanceledEnrollmentCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteCanceledEnrollmentCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalSoldTicketCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalSoldTicketCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -55,14 +55,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteSoldTicketCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteSoldTicketCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalReturnedTicketCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalReturnedTicketCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -70,14 +70,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteReturnedTicketCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteReturnedTicketCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalIndirectTicketCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalIndirectTicketCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -85,14 +85,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteIndirectTicketCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteIndirectTicketCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalReturnedIndirectTicketCount(DateTime fromDate, DateTime toDate)
+    public int GetTotalReturnedIndirectTicketCount(DateTime fromDateUtc, DateTime toDateUtc)
     {
         int result = 0;
 
@@ -100,14 +100,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteReturnedIndirectTicketCount(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteReturnedIndirectTicketCount(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public double GetTotalRevenue(DateTime fromDate, DateTime toDate)
+    public double GetTotalRevenue(DateTime fromDateUtc, DateTime toDateUtc)
     {
         double result = 0;
 
@@ -115,14 +115,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetRouteTotalRevenue(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteTotalRevenue(fromDateUtc, toDateUtc, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public double GetTotalAverageRating(DateTime fromDate, DateTime toDate)
+    public double GetTotalAverageRating(DateTime fromDateUtc, DateTime toDateUtc)
     {
         double result = 0;
         int enrollmentCount = 0;
@@ -136,7 +136,7 @@ public class Company
                     continue;
                 }
                 
-                result += vehicle.GetRouteAverageRating(fromDate, toDate, enrollment.RouteId);
+                result += vehicle.GetRouteAverageRating(fromDateUtc, toDateUtc, enrollment.RouteId);
                 enrollmentCount++;
             }
         }

@@ -35,7 +35,7 @@ public class Route
         foreach (var enrollment in VehicleEnrollments)
         {
             result += enrollment.Tickets.Count(t =>
-                !t.IsReturned &&
+                !t.TicketGroup.IsReturned &&
                 t.VehicleEnrollment.DepartureDateTimeUtc >= fromDate && t.VehicleEnrollment.DepartureDateTimeUtc <= toDate &&
                 t.VehicleEnrollment.Vehicle.CompanyId == companyId);
         }
@@ -52,7 +52,7 @@ public class Route
         
         foreach (var enrollment in VehicleEnrollments)
         {
-            result += enrollment.Tickets.Count(t => !t.IsReturned &&
+            result += enrollment.Tickets.Count(t => !t.TicketGroup.IsReturned &&
                 t.FirstRouteAddressId != departureAddressId ||
                 t.LastRouteAddressId != arrivalAddressId &&
                 t.VehicleEnrollment.DepartureDateTimeUtc >= fromDate && t.VehicleEnrollment.DepartureDateTimeUtc <= toDate &&

@@ -8,14 +8,7 @@ public class TicketDto : CreateTicketDto
 
     public string UserId { get; set; } = null!;
     
-    [DataType(DataType.DateTime)]
-    public DateTime PurchaseDateTimeUtc { get; set; }
-
     public InReviewVehicleEnrollmentDto VehicleEnrollment { get; set; } = null!;
-    
-    public bool IsReturned { get; set; } = false;
-    
-    public bool IsMissed { get; set; } = false;
 }
 
 public class CreateTicketDto
@@ -43,16 +36,6 @@ public class UpdateTicketDto
     
     [Required]
     public int VehicleEnrollmentId { get; set; }
-    
-    [Required]
-    [DataType(DataType.DateTime)]
-    public DateTime PurchaseDateTime { get; set; }
-    
-    [Required]
-    public bool IsReturned { get; set; } = false;
-    
-    [Required]
-    public bool IsMissed { get; set; } = false;
 }
 
 public class CreateInTicketGroupTicketDto

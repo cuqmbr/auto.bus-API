@@ -52,7 +52,7 @@ public class Vehicle
 
         foreach (var enrollment in enrollments)
         {
-            result += enrollment.Tickets.Count(t => !t.IsReturned);
+            result += enrollment.Tickets.Count(t => !t.TicketGroup.IsReturned);
         }
 
         return result;
@@ -68,7 +68,7 @@ public class Vehicle
 
         foreach (var enrollment in enrollments)
         {
-            result += enrollment.Tickets.Count(t => t.IsReturned);
+            result += enrollment.Tickets.Count(t => t.TicketGroup.IsReturned);
         }
 
         return result;
@@ -87,7 +87,7 @@ public class Vehicle
             var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
             var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
             
-            result += enrollment.Tickets.Count(t => !t.IsReturned &&
+            result += enrollment.Tickets.Count(t => !t.TicketGroup.IsReturned &&
                 t.FirstRouteAddressId != departureRouteAddressId ||
                 t.LastRouteAddressId != arrivalRouteAddressId);
         }
@@ -108,7 +108,7 @@ public class Vehicle
             var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
             var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
             
-            result += enrollment.Tickets.Count(t => t.IsReturned &&
+            result += enrollment.Tickets.Count(t => t.TicketGroup.IsReturned &&
                 (t.FirstRouteAddressId != departureRouteAddressId ||
                 t.LastRouteAddressId != arrivalRouteAddressId));
         }

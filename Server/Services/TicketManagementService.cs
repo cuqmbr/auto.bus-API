@@ -78,8 +78,8 @@ public class TicketManagementService : ITicketManagementService
             }
 
             tickets = tickets.Where(t =>
-                t.PurchaseDateTimeUtc >= fromDateTime.Value.ToUniversalTime() &&
-                t.PurchaseDateTimeUtc <= toDateTime.Value.ToUniversalTime());
+                t.TicketGroup.PurchaseDateTimeUtc >= fromDateTime.Value.ToUniversalTime() &&
+                t.TicketGroup.PurchaseDateTimeUtc <= toDateTime.Value.ToUniversalTime());
         }
         
         void FilterByTicketReturnedState(ref IQueryable<Ticket> tickets,
@@ -90,7 +90,7 @@ public class TicketManagementService : ITicketManagementService
                 return;
             }
 
-            tickets = tickets.Where(t => t.IsReturned == isReturned);
+            tickets = tickets.Where(t => t.TicketGroup.IsReturned == isReturned);
         }
 
         // TODO: change TicketParameters 

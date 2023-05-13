@@ -23,7 +23,7 @@ public class VehicleEnrollment
     public TimeSpan? DelayTimeSpan { get; set; }
 
     public bool IsCanceled { get; set; } = false;
-    public string? CancelationComment { get; set; } = null!;
+    public string? CancellationComment { get; set; } = null!;
     
     public IList<Ticket> Tickets { get; set; } = null!;
     public IList<Review> Reviews { get; set; } = null!;

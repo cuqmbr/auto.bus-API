@@ -97,7 +97,7 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
             }
 
             enrollment = enrollment.Where(e =>
-                e.CancelationComment != null && e.CancelationComment.ToLower().Contains(search.ToLower()));
+                e.CancellationComment != null && e.CancellationComment.ToLower().Contains(search.ToLower()));
         }
         
         void FilterByEnrollmentVehicleId(ref IQueryable<VehicleEnrollment> enrollments,
@@ -205,7 +205,7 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
             }
 
             enrollment = enrollment.Where(e =>
-                e.CancelationComment != null && e.CancelationComment.ToLower().Contains(search.ToLower()));
+                e.CancellationComment != null && e.CancellationComment.ToLower().Contains(search.ToLower()));
         }
         
         void FilterByEnrollmentVehicleId(ref IQueryable<VehicleEnrollment> enrollments,

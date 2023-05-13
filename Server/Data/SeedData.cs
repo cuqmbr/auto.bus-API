@@ -281,19 +281,18 @@ public class SeedData
                 new TicketGroup
                 {
                     UserId = companyUser.Id,
+                    PurchaseDateTimeUtc = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 08, 00, 00, DateTimeKind.Utc).AddDays(-1),
                     Tickets = new List<Ticket>
                     {
                         new Ticket
                         {
                             VehicleEnrollmentId = 1,
-                            PurchaseDateTimeUtc = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 08, 00, 00, DateTimeKind.Utc).AddDays(-1),
                             FirstRouteAddressId = 1,
                             LastRouteAddressId = 2
                         },
                         new Ticket
                         {
                             VehicleEnrollmentId = 2,
-                            PurchaseDateTimeUtc = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, 08, 00, 00, DateTimeKind.Utc).AddDays(-1),
                             FirstRouteAddressId = 2,
                             LastRouteAddressId = 9
                         }

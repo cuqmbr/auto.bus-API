@@ -199,7 +199,7 @@ public class ReportService : IReportService
             
             row.Cells[9].MergeRight = 2;
             row.Cells[9].MergeDown = 1;
-            row.Cells[9].AddParagraph($"{ticketGroup.Tickets.First().PurchaseDateTimeUtc:dd.MM.yyyy HH:mm:ss}");
+            row.Cells[9].AddParagraph($"{ticketGroup.PurchaseDateTimeUtc:dd.MM.yyyy HH:mm:ss}");
 
             row = table.AddRow();
 
