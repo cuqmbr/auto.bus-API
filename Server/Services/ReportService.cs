@@ -613,22 +613,22 @@ public class ReportService : IReportService
                 row.Shading.Color = Color.FromRgbColor(25, Colors.Black);
 
                 row.Cells[0].MergeRight = 1;
-                row.Cells[0].AddParagraph($"{route.GetEnrollmentCount()}");
+                row.Cells[0].AddParagraph($"{route.GetCompanyEnrollmentCount(fromDate, toDate, companyId)}");
 
                 row.Cells[2].MergeRight = 1;
-                row.Cells[2].AddParagraph($"{route.GetCanceledEnrollmentCount()}");
+                row.Cells[2].AddParagraph($"{route.GetCompanyCanceledEnrollmentCount(fromDate, toDate, companyId)}");
 
                 row.Cells[4].MergeRight = 1;
-                row.Cells[4].AddParagraph($"{route.GetSoldTicketCount()}");
+                row.Cells[4].AddParagraph($"{route.GetCompanySoldTicketCount(fromDate, toDate, companyId)}");
 
                 row.Cells[6].MergeRight = 1;
-                row.Cells[6].AddParagraph($"{route.GetIndirectTicketCount()}");
+                row.Cells[6].AddParagraph($"{route.GetCompanyIndirectTicketCount(fromDate, toDate, companyId)}");
 
                 row.Cells[8].MergeRight = 1;
-                row.Cells[8].AddParagraph($"{route.GetTotalRevenue()}");
+                row.Cells[8].AddParagraph($"{route.GetCompanyTotalRevenue(fromDate, toDate, companyId)}");
 
                 row.Cells[10].MergeRight = 1;
-                var routeAverageRating = route.GetAverageRating();
+                var routeAverageRating = route.GetCompanyAverageRating(fromDate, toDate, companyId);
                 row.Cells[10].AddParagraph($"{(routeAverageRating == 0 ? "-" : routeAverageRating)}");
                 
                 row = table.AddRow();
@@ -670,23 +670,23 @@ public class ReportService : IReportService
                     row.Cells[0].MergeRight = 2;
                     row.Cells[0].AddParagraph($"{vehicle.Id}, {vehicle.Type}, {vehicle.Number}");
 
-                    var executedEnrollmentCount = vehicle.GetEnrollmentCount(route.Id);
-                    var canceledEnrollmentCount = vehicle.GetCanceledEnrollmentCount(route.Id);
+                    var executedEnrollmentCount = vehicle.GetRouteEnrollmentCount(fromDate, toDate, route.Id);
+                    var canceledEnrollmentCount = vehicle.GetRouteCanceledEnrollmentCount(fromDate, toDate, route.Id);
                     row.Cells[3].MergeRight = 1;
                     row.Cells[3].AddParagraph($"{executedEnrollmentCount + canceledEnrollmentCount}, " +
                                               $"{executedEnrollmentCount}, {canceledEnrollmentCount}");
 
                     row.Cells[5].MergeRight = 2;
-                    row.Cells[5].AddParagraph($"{vehicle.GetSoldTicketCount(route.Id)}, " +
-                                              $"{vehicle.GetReturnedTicketCount(route.Id)}; " +
-                                              $"{vehicle.GetIndirectTicketCount(route.Id)}, " +
-                                              $"{vehicle.GetReturnedIndirectTicketCount(route.Id)}");
+                    row.Cells[5].AddParagraph($"{vehicle.GetRouteSoldTicketCount(fromDate, toDate, route.Id)}, " +
+                                              $"{vehicle.GetRouteReturnedTicketCount(fromDate, toDate, route.Id)}; " +
+                                              $"{vehicle.GetRouteIndirectTicketCount(fromDate, toDate, route.Id)}, " +
+                                              $"{vehicle.GetRouteReturnedIndirectTicketCount(fromDate, toDate, route.Id)}");
 
                     row.Cells[8].MergeRight = 1;
-                    row.Cells[8].AddParagraph($"{vehicle.GetTotalRevenue(route.Id)}");
+                    row.Cells[8].AddParagraph($"{vehicle.GetRouteTotalRevenue(fromDate, toDate, route.Id)}");
 
                     row.Cells[10].MergeRight = 1;
-                    var vehicleAverageRating = vehicle.GetAverageRating(route.Id);
+                    var vehicleAverageRating = vehicle.GetRouteAverageRating(fromDate, toDate, route.Id);
                     row.Cells[10].AddParagraph($"{(vehicleAverageRating == 0 ? "-" : vehicleAverageRating)}");
                 }
                 
@@ -704,12 +704,12 @@ public class ReportService : IReportService
             paragraph = section.AddParagraph(
                 $"У період з {fromDate:dd.MM.yyyy} по {toDate:dd.MM.yyyy} " +
                 $"({(toDate - fromDate).Days} днів) компанією {dbCompany.Name} " +
-                $"було заплановано {dbCompany.GetTotalEnrollmentCount()} поїздки, " +
-                $"з яких {dbCompany.GetTotalCanceledEnrollmentCount()} було скасовано, " +
-                $"продано {dbCompany.GetTotalSoldTicketCount()} квитків, " +
-                $"з яких {dbCompany.GetTotalReturnedTicketCount()} було повернено. " +
-                $"За цей час було зароблено {dbCompany.GetTotalRevenue()} гривень. " +
-                $"Середній рейтинг по всім поїздкам: {dbCompany.GetTotalAverageRating()}");
+                $"було заплановано {dbCompany.GetTotalEnrollmentCount(fromDate, toDate)} поїздки, " +
+                $"з яких {dbCompany.GetTotalCanceledEnrollmentCount(fromDate, toDate)} було скасовано, " +
+                $"продано {dbCompany.GetTotalSoldTicketCount(fromDate, toDate)} квитків, " +
+                $"з яких {dbCompany.GetTotalReturnedTicketCount(fromDate, toDate)} було повернено. " +
+                $"За цей час було зароблено {dbCompany.GetTotalRevenue(fromDate, toDate)} гривень. " +
+                $"Середній рейтинг по всім поїздкам: {dbCompany.GetTotalAverageRating(fromDate, toDate)}");
             paragraph.Format.Alignment = ParagraphAlignment.Justify;
             paragraph.Format.Font.Size = 14;
         }
@@ -761,12 +761,12 @@ public class ReportService : IReportService
 
         var statistics = new StatisticsResponse
         {
-            EnrollmentsPlanned = dbCompany.GetTotalEnrollmentCount(),
-            EnrollmentsCanceled = dbCompany.GetTotalCanceledEnrollmentCount(),
-            TicketsSold = dbCompany.GetTotalSoldTicketCount(),
-            TicketsReturned = dbCompany.GetTotalReturnedTicketCount(),
-            MoneyEarned = dbCompany.GetTotalRevenue(),
-            AverageRating = dbCompany.GetTotalAverageRating()
+            EnrollmentsPlanned = dbCompany.GetTotalEnrollmentCount(fromDate, toDate),
+            EnrollmentsCanceled = dbCompany.GetTotalCanceledEnrollmentCount(fromDate, toDate),
+            TicketsSold = dbCompany.GetTotalSoldTicketCount(fromDate, toDate),
+            TicketsReturned = dbCompany.GetTotalReturnedTicketCount(fromDate, toDate),
+            MoneyEarned = dbCompany.GetTotalRevenue(fromDate, toDate),
+            AverageRating = dbCompany.GetTotalAverageRating(fromDate, toDate)
         };
 
         return (true, null, statistics);
@@ -817,12 +817,12 @@ public class ReportService : IReportService
 
         foreach (var company in dbCompanies)
         {
-            statistics.EnrollmentsPlanned += company.GetTotalEnrollmentCount();
-            statistics.EnrollmentsCanceled += company.GetTotalCanceledEnrollmentCount();
-            statistics.TicketsSold += company.GetTotalSoldTicketCount();
-            statistics.TicketsReturned += company.GetTotalReturnedTicketCount();
-            statistics.MoneyEarned += company.GetTotalRevenue();
-            statistics.AverageRating += company.GetTotalAverageRating();
+            statistics.EnrollmentsPlanned += company.GetTotalEnrollmentCount(fromDate, toDate);
+            statistics.EnrollmentsCanceled += company.GetTotalCanceledEnrollmentCount(fromDate, toDate);
+            statistics.TicketsSold += company.GetTotalSoldTicketCount(fromDate, toDate);
+            statistics.TicketsReturned += company.GetTotalReturnedTicketCount(fromDate, toDate);
+            statistics.MoneyEarned += company.GetTotalRevenue(fromDate, toDate);
+            statistics.AverageRating += company.GetTotalAverageRating(fromDate, toDate);
         }
 
         return (true, null, statistics);

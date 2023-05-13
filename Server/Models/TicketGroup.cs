@@ -23,4 +23,67 @@ public class TicketGroup
 
         return cost;
     }
+    
+    public DateTime GetDepartureTime()
+    {
+        var departureDateTimeUtc = Tickets.First().VehicleEnrollment.DepartureDateTimeUtc;
+
+        var routeAddresses = Tickets.First().VehicleEnrollment.Route.RouteAddresses
+            .OrderBy(ra => ra.Order).ToArray();
+        
+        foreach (var routeAddress in routeAddresses)
+        {
+            var details = routeAddress.RouteAddressDetails
+                .First(rad => rad.RouteAddressId == routeAddress.Id);
+            
+            if (routeAddress.AddressId == Tickets.First().FirstRouteAddressId)
+            {
+                departureDateTimeUtc += details.WaitTimeSpan;
+                break;
+            }
+
+            departureDateTimeUtc += details.TimeSpanToNextCity;
+            departureDateTimeUtc += details.WaitTimeSpan;
+        }
+
+        return departureDateTimeUtc;
+    }
+    
+    public DateTime GetArrivalTime()
+    {
+        var arrivalDateTimeUtc = Tickets.First().VehicleEnrollment.DepartureDateTimeUtc;
+        
+        var routeAddresses = Tickets.Last().VehicleEnrollment.Route.RouteAddresses
+            .OrderBy(ra => ra.Order).ToArray();
+        
+        foreach (var routeAddress in routeAddresses)
+        {
+            var details = routeAddress.RouteAddressDetails
+                .First(rad => rad.RouteAddressId == routeAddress.Id);
+            
+            if (routeAddress.AddressId == Tickets.Last().LastRouteAddressId)
+            {
+                break;
+            }
+
+            arrivalDateTimeUtc += details.TimeSpanToNextCity;
+            arrivalDateTimeUtc += details.WaitTimeSpan;
+        }
+
+        return arrivalDateTimeUtc;
+    }
+
+    public Address GetDepartureAddress()
+    {
+        return Tickets.First().VehicleEnrollment.Route.RouteAddresses
+            .First(ra => ra.AddressId == Tickets.First().FirstRouteAddressId)
+            .Address;
+    }
+
+    public Address GetArrivalAddress()
+    {
+        return Tickets.Last().VehicleEnrollment.Route.RouteAddresses
+            .First(ra => ra.AddressId == Tickets.Last().LastRouteAddressId)
+            .Address;
+    }
 }

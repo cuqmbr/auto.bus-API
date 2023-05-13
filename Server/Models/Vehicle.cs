@@ -26,21 +26,31 @@ public class Vehicle
 
     public IList<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;
     
-    public int GetEnrollmentCount(int routeId)
+    public int GetRouteEnrollmentCount(DateTime fromDate, DateTime toDate, int routeId)
     {
-        return VehicleEnrollments.Count(ve => !ve.IsCanceled && ve.RouteId == routeId);
+        return VehicleEnrollments.Count(ve => 
+            !ve.IsCanceled &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.RouteId == routeId);
     }
     
-    public int GetCanceledEnrollmentCount(int routeId)
+    public int GetRouteCanceledEnrollmentCount(DateTime fromDate, DateTime toDate, int routeId)
     {
-        return VehicleEnrollments.Count(ve => ve.IsCanceled && ve.RouteId == routeId);
+        return VehicleEnrollments.Count(ve =>
+            ve.IsCanceled &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.RouteId == routeId);
     }
     
-    public int GetSoldTicketCount(int routeId)
+    public int GetRouteSoldTicketCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         int result = 0;
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
+
+        foreach (var enrollment in enrollments)
         {
             result += enrollment.Tickets.Count(t => !t.IsReturned);
         }
@@ -48,11 +58,15 @@ public class Vehicle
         return result;
     }
     
-    public int GetReturnedTicketCount(int routeId)
+    public int GetRouteReturnedTicketCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         int result = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        foreach (var enrollment in enrollments)
         {
             result += enrollment.Tickets.Count(t => t.IsReturned);
         }
@@ -60,11 +74,15 @@ public class Vehicle
         return result;
     }
     
-    public int GetIndirectTicketCount(int routeId)
+    public int GetRouteIndirectTicketCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         int result = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        foreach (var enrollment in enrollments)
         {
             var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
             var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
@@ -77,11 +95,15 @@ public class Vehicle
         return result;
     }
     
-    public int GetReturnedIndirectTicketCount(int routeId)
+    public int GetRouteReturnedIndirectTicketCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         int result = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        foreach (var enrollment in enrollments)
         {
             var departureRouteAddressId = enrollment.Route.RouteAddresses.First().AddressId;
             var arrivalRouteAddressId = enrollment.Route.RouteAddresses.Last().AddressId;
@@ -94,11 +116,15 @@ public class Vehicle
         return result;
     }
     
-    public double GetTotalRevenue(int routeId)
+    public double GetRouteTotalRevenue(DateTime fromDate, DateTime toDate, int routeId)
     {
         double result = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        foreach (var enrollment in enrollments)
         {
             foreach (var ticket in enrollment.Tickets)
             {
@@ -109,12 +135,16 @@ public class Vehicle
         return result;
     }
     
-    public double GetAverageRating(int routeId)
+    public double GetRouteAverageRating(DateTime fromDate, DateTime toDate, int routeId)
     {
         double result = 0;
         int reviewCount = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.RouteId == routeId &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate);
 
-        foreach (var enrollment in VehicleEnrollments.Where(ve => ve.RouteId == routeId))
+        foreach (var enrollment in enrollments)
         {
             reviewCount += enrollment.Reviews.Count;
             

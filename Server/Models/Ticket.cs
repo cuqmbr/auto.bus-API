@@ -48,7 +48,7 @@ public class Ticket
         var departureDateTimeUtc = VehicleEnrollment.DepartureDateTimeUtc;
 
         var routeAddresses = VehicleEnrollment.Route.RouteAddresses
-            .OrderBy(ra => ra.Order).ToArray();
+            .OrderBy(ra => ra.Order);
         
         foreach (var routeAddress in routeAddresses)
         {
@@ -73,7 +73,7 @@ public class Ticket
         var arrivalDateTimeUtc = VehicleEnrollment.DepartureDateTimeUtc;
         
         var routeAddresses = VehicleEnrollment.Route.RouteAddresses
-            .OrderBy(ra => ra.Order).ToArray();
+            .OrderBy(ra => ra.Order);
         
         foreach (var routeAddress in routeAddresses)
         {

@@ -12,29 +12,38 @@ public class Route
     public virtual IList<RouteAddress> RouteAddresses { get; set; } = null!;
     public virtual IList<VehicleEnrollment> VehicleEnrollments { get; set; } = null!;
     
-    public int GetEnrollmentCount()
+    public int GetCompanyEnrollmentCount(DateTime fromDate, DateTime toDate, int companyId)
     {
-        return VehicleEnrollments.Count(ve => !ve.IsCanceled);
+        return VehicleEnrollments.Count(ve =>
+            !ve.IsCanceled &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.Vehicle.CompanyId == companyId);
     }
 
-    public int GetCanceledEnrollmentCount()
+    public int GetCompanyCanceledEnrollmentCount(DateTime fromDate, DateTime toDate, int companyId)
     {
-        return VehicleEnrollments.Count(ve => ve.IsCanceled);
+        return VehicleEnrollments.Count(ve =>
+            ve.IsCanceled &&
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.Vehicle.CompanyId == companyId);
     }
     
-    public int GetSoldTicketCount()
+    public int GetCompanySoldTicketCount(DateTime fromDate, DateTime toDate, int companyId)
     {
         int result = 0;
 
         foreach (var enrollment in VehicleEnrollments)
         {
-            result += enrollment.Tickets.Count(t => !t.IsReturned);
+            result += enrollment.Tickets.Count(t =>
+                !t.IsReturned &&
+                t.VehicleEnrollment.DepartureDateTimeUtc >= fromDate && t.VehicleEnrollment.DepartureDateTimeUtc <= toDate &&
+                t.VehicleEnrollment.Vehicle.CompanyId == companyId);
         }
 
         return result;
     }
 
-    public int GetIndirectTicketCount()
+    public int GetCompanyIndirectTicketCount(DateTime fromDate, DateTime toDate, int companyId)
     {
         int result = 0;
 
@@ -45,17 +54,23 @@ public class Route
         {
             result += enrollment.Tickets.Count(t => !t.IsReturned &&
                 t.FirstRouteAddressId != departureAddressId ||
-                t.LastRouteAddressId != arrivalAddressId);
+                t.LastRouteAddressId != arrivalAddressId &&
+                t.VehicleEnrollment.DepartureDateTimeUtc >= fromDate && t.VehicleEnrollment.DepartureDateTimeUtc <= toDate &&
+                t.VehicleEnrollment.Vehicle.CompanyId == companyId);
         }
 
         return result;
     }
 
-    public double GetTotalRevenue()
+    public double GetCompanyTotalRevenue(DateTime fromDate, DateTime toDate, int companyId)
     {
         double result = 0;
 
-        foreach (var enrollment in VehicleEnrollments)
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.Vehicle.CompanyId == companyId);
+        
+        foreach (var enrollment in enrollments)
         {
             foreach (var ticket in enrollment.Tickets)
             {
@@ -66,12 +81,16 @@ public class Route
         return result;
     }
 
-    public double GetAverageRating()
+    public double GetCompanyAverageRating(DateTime fromDate, DateTime toDate, int companyId)
     {
         double result = 0;
         int reviewCount = 0;
+        
+        var enrollments = VehicleEnrollments.Where(ve =>
+            ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
+            ve.Vehicle.CompanyId == companyId);
 
-        foreach (var enrollment in VehicleEnrollments)
+        foreach (var enrollment in enrollments)
         {
             if (enrollment.Reviews.Count == 0)
             {

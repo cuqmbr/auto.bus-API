@@ -17,7 +17,7 @@ public class Company
     public virtual IList<Vehicle> Vehicles { get; set; } = null!;
     public virtual IList<CompanyDriver> CompanyDrivers { get; set; } = null!;
     
-    public int GetTotalEnrollmentCount()
+    public int GetTotalEnrollmentCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -25,14 +25,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetEnrollmentCount(enrollment.RouteId);
+                result += vehicle.GetRouteEnrollmentCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalCanceledEnrollmentCount()
+    public int GetTotalCanceledEnrollmentCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -40,14 +40,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetCanceledEnrollmentCount(enrollment.RouteId);
+                result += vehicle.GetRouteCanceledEnrollmentCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalSoldTicketCount()
+    public int GetTotalSoldTicketCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -55,14 +55,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetSoldTicketCount(enrollment.RouteId);
+                result += vehicle.GetRouteSoldTicketCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalReturnedTicketCount()
+    public int GetTotalReturnedTicketCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -70,14 +70,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetReturnedTicketCount(enrollment.RouteId);
+                result += vehicle.GetRouteReturnedTicketCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalIndirectTicketCount()
+    public int GetTotalIndirectTicketCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -85,14 +85,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetIndirectTicketCount(enrollment.RouteId);
+                result += vehicle.GetRouteIndirectTicketCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public int GetTotalReturnedIndirectTicketCount()
+    public int GetTotalReturnedIndirectTicketCount(DateTime fromDate, DateTime toDate)
     {
         int result = 0;
 
@@ -100,14 +100,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetReturnedIndirectTicketCount(enrollment.RouteId);
+                result += vehicle.GetRouteReturnedIndirectTicketCount(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public double GetTotalRevenue()
+    public double GetTotalRevenue(DateTime fromDate, DateTime toDate)
     {
         double result = 0;
 
@@ -115,14 +115,14 @@ public class Company
         {
             foreach (var enrollment in vehicle.VehicleEnrollments)
             {
-                result += vehicle.GetTotalRevenue(enrollment.RouteId);
+                result += vehicle.GetRouteTotalRevenue(fromDate, toDate, enrollment.RouteId);
             }
         }
 
         return result;
     }
     
-    public double GetTotalAverageRating()
+    public double GetTotalAverageRating(DateTime fromDate, DateTime toDate)
     {
         double result = 0;
         int enrollmentCount = 0;
@@ -136,7 +136,7 @@ public class Company
                     continue;
                 }
                 
-                result += vehicle.GetAverageRating(enrollment.RouteId);
+                result += vehicle.GetRouteAverageRating(fromDate, toDate, enrollment.RouteId);
                 enrollmentCount++;
             }
         }
