@@ -149,6 +149,8 @@ services.AddScoped<VehicleEnrollmentSearchService>();
 services.AddScoped<IReportService, ReportService>();
 services.AddScoped<IStatisticsService, StatisticsService>();
 
+builder.Services.AddScoped<IPaymentsService, PaymentsService>();
+
 // Adding DB Context with PostgreSQL
 var connectionString = configuration.GetConnectionString("DefaultConnection");
 services.AddDbContext<ApplicationDbContext>(options =>
