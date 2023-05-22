@@ -7,7 +7,7 @@ public class TicketGroup
     [Key]
     public int Id { get; set; }
     
-    public DateTime PurchaseDateTimeUtc { get; set; } =  DateTime.UtcNow;
+    public DateTime PurchaseDateTimeUtc { get; set; } = DateTime.MinValue;
     public bool IsReturned { get; set; } = false;
 
     public string UserId { get; set; } = null!;
