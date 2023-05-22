@@ -8,6 +8,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using Utils;
 
 namespace Server.Services;
 
@@ -18,20 +19,40 @@ public class VehicleManagementService : IVehicleManagementService
     private readonly ISortHelper<ExpandoObject> _vehicleSortHelper;
     private readonly IDataShaper<VehicleDto> _vehicleDataShaper;
     private readonly IPager<ExpandoObject> _pager;
+    private readonly ISessionUserService _sessionUserService;
 
     public VehicleManagementService(ApplicationDbContext dbContext,
         IMapper mapper, ISortHelper<ExpandoObject> vehicleSortHelper, 
-        IDataShaper<VehicleDto> vehicleDataShaper, IPager<ExpandoObject> pager)
+        IDataShaper<VehicleDto> vehicleDataShaper, IPager<ExpandoObject> pager,
+        ISessionUserService sessionUserService)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _vehicleSortHelper = vehicleSortHelper;
         _vehicleDataShaper = vehicleDataShaper;
         _pager = pager;
+        _sessionUserService = sessionUserService;
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, VehicleDto vehicle)> AddVehicle(CreateVehicleDto createVehicleDto)
     {
+        if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
+        {
+            if (createVehicleDto.CompanyId == null)
+            {
+                return (false, new BadRequestObjectResult("CompanyId must have a value"), null!);
+            }
+        }
+        else
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+            createVehicleDto.CompanyId = result.companyId;
+        }
+    
         var vehicle = _mapper.Map<Vehicle>(createVehicleDto);
     
         await _dbContext.Vehicles.AddAsync(vehicle);
@@ -46,6 +67,22 @@ public class VehicleManagementService : IVehicleManagementService
         var dbVehicles = _dbContext.Vehicles
             .Include(t => t.Company)
             .AsQueryable();
+
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!, null!);
+            }
+            
+            dbVehicles = dbVehicles.Where(v => v.CompanyId == result.companyId);
+        }
+
+        if (!dbVehicles.Any())
+        {
+            return (false, new NotFoundResult(), null!, null!);
+        }
 
         var vehicleDtos = _mapper.ProjectTo<VehicleDto>(dbVehicles);
         var shapedData = _vehicleDataShaper.ShapeData(vehicleDtos, parameters.Fields).AsQueryable();
@@ -207,6 +244,14 @@ public class VehicleManagementService : IVehicleManagementService
         {
             return (false, new NotFoundResult(), null!);
         }
+
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyVehicle(id))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
         
         var dbVehicle = await _dbContext.Vehicles.Where(v => v.Id == id)
             .Include(t => t.Company)
@@ -227,6 +272,23 @@ public class VehicleManagementService : IVehicleManagementService
     {
         var vehicle = _mapper.Map<Vehicle>(updateVehicleDto);
         _dbContext.Entry(vehicle).State = EntityState.Modified;
+        
+        if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
+        {
+            if (updateVehicleDto.CompanyId == null)
+            {
+                return (false, new BadRequestObjectResult("CompanyId must have a value"), null!);
+            }
+        }
+        else
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+            vehicle.CompanyId = result.companyId;
+        }
         
         try
         {
@@ -249,13 +311,21 @@ public class VehicleManagementService : IVehicleManagementService
 
     public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteVehicle(int id)
     {
-        var dbVehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
-    
-        if (dbVehicle == null)
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyVehicle(id))
+            {
+                return (false, new UnauthorizedResult());
+            }
+        }
+        
+        if (!await IsVehicleExists(id))
         {
             return (false, new NotFoundResult());
         }
-    
+
+        var dbVehicle = await _dbContext.Vehicles.FirstAsync(v => v.Id == id);
+        
         _dbContext.Vehicles.Remove(dbVehicle);
         await _dbContext.SaveChangesAsync();
     
@@ -266,4 +336,5 @@ public class VehicleManagementService : IVehicleManagementService
     {
         return await _dbContext.Vehicles.AnyAsync(v => v.Id == id);
     }
+    
 }

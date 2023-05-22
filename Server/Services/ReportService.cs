@@ -9,6 +9,7 @@ using PdfSharpCore.Pdf;
 using Server.Data;
 using Server.Models;
 using SharedModels.Responses;
+using Utils;
 using Route = Server.Models.Route;
 
 namespace Server.Services;
@@ -16,10 +17,12 @@ namespace Server.Services;
 public class ReportService : IReportService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ISessionUserService _sessionUserService;
 
-    public ReportService(ApplicationDbContext dbContext)
+    public ReportService(ApplicationDbContext dbContext, ISessionUserService sessionUserService)
     {
         _dbContext = dbContext;
+        _sessionUserService = sessionUserService;
     }
 
     public async Task<(bool IsSucceed, IActionResult? actionResult, Stream ticketPdf)> GetTicket(int ticketGroupId)
@@ -27,6 +30,15 @@ public class ReportService : IReportService
         if (!await DoesTicketGroupExist(ticketGroupId))
         {
             return (false, new NotFoundResult(), null!);
+        }
+
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if ((await _dbContext.TicketGroups.FirstAsync(tg => tg.Id == ticketGroupId)).UserId !=
+                _sessionUserService.GetAuthUserId())
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
         }
         
         var dbTicketGroup = await _dbContext.TicketGroups
@@ -373,9 +385,26 @@ public class ReportService : IReportService
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, Stream reportPdf)> 
-        GetCompanyReportPdf(int companyId, DateTime fromDate, DateTime toDate)
+        GetCompanyReportPdf(int? companyId, DateTime fromDate, DateTime toDate)
     {
-        if (!await DoesCompanyExist(companyId))
+        if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
+        {
+            if (companyId == null)
+            {
+                return (false, new BadRequestObjectResult("CompanyId must have a value"), null!);
+            }
+        }
+        else
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+            companyId = result.companyId;
+        }
+        
+        if (!await DoesCompanyExist((int)companyId))
         {
             return (false, new NotFoundResult(), null!);
         }
@@ -613,22 +642,22 @@ public class ReportService : IReportService
                 row.Shading.Color = Color.FromRgbColor(25, Colors.Black);
 
                 row.Cells[0].MergeRight = 1;
-                row.Cells[0].AddParagraph($"{route.GetCompanyEnrollmentCount(fromDate, toDate, companyId)}");
+                row.Cells[0].AddParagraph($"{route.GetCompanyEnrollmentCount(fromDate, toDate, (int) companyId)}");
 
                 row.Cells[2].MergeRight = 1;
-                row.Cells[2].AddParagraph($"{route.GetCompanyCanceledEnrollmentCount(fromDate, toDate, companyId)}");
+                row.Cells[2].AddParagraph($"{route.GetCompanyCanceledEnrollmentCount(fromDate, toDate, (int) companyId)}");
 
                 row.Cells[4].MergeRight = 1;
-                row.Cells[4].AddParagraph($"{route.GetCompanySoldTicketCount(fromDate, toDate, companyId)}");
+                row.Cells[4].AddParagraph($"{route.GetCompanySoldTicketCount(fromDate, toDate, (int) companyId)}");
 
                 row.Cells[6].MergeRight = 1;
-                row.Cells[6].AddParagraph($"{route.GetCompanyIndirectTicketCount(fromDate, toDate, companyId)}");
+                row.Cells[6].AddParagraph($"{route.GetCompanyIndirectTicketCount(fromDate, toDate, (int) companyId)}");
 
                 row.Cells[8].MergeRight = 1;
-                row.Cells[8].AddParagraph($"{route.GetCompanyTotalRevenue(fromDate, toDate, companyId)}");
+                row.Cells[8].AddParagraph($"{route.GetCompanyTotalRevenue(fromDate, toDate, (int) companyId)}");
 
                 row.Cells[10].MergeRight = 1;
-                var routeAverageRating = route.GetCompanyAverageRating(fromDate, toDate, companyId);
+                var routeAverageRating = route.GetCompanyAverageRating(fromDate, toDate, (int) companyId);
                 row.Cells[10].AddParagraph($"{(routeAverageRating == 0 ? "-" : routeAverageRating)}");
                 
                 row = table.AddRow();
@@ -716,9 +745,26 @@ public class ReportService : IReportService
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, StatisticsResponse statistics)>
-        GetCompanyReportRaw(int companyId, DateTime fromDate, DateTime toDate)
+        GetCompanyReportRaw(int? companyId, DateTime fromDate, DateTime toDate)
     {
-        if (!await DoesCompanyExist(companyId))
+        if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
+        {
+            if (companyId == null)
+            {
+                return (false, new BadRequestObjectResult("Query parameter CompanyId must have a value"), null!);
+            }
+        }
+        else
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+            companyId = result.companyId;
+        }
+
+        if (!await DoesCompanyExist((int)companyId))
         {
             return (false, new NotFoundResult(), null!);
         }

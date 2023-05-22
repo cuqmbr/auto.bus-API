@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -5,6 +6,7 @@ using SharedModels.QueryParameters.Statistics;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/[controller]")] 
 [ApiController] 
 public class StatisticsController : ControllerBase
@@ -16,6 +18,7 @@ public class StatisticsController : ControllerBase
         _statisticsService = statisticsService;
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("routes")]
     public async Task<IActionResult> GetPopularRoutes([FromQuery] PopularRoutesParameters parameters)
     {
@@ -31,6 +34,7 @@ public class StatisticsController : ControllerBase
         return Ok(result.route);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpGet("users")]
     public async Task<IActionResult> GetEngagedUsers([FromQuery] EngagedUserParameters parameters)
 
@@ -47,6 +51,7 @@ public class StatisticsController : ControllerBase
         return Ok(result.users);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpGet("companies")]
     public async Task<IActionResult> GetPopularCompanies([FromQuery] PopularCompanyParameters parameters)
     {

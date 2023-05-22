@@ -108,6 +108,8 @@ services.AddAutoMapper(typeof(MapperInitializer));
 services.AddScoped<IEmailSenderService, EmailSenderService>();
 services.AddScoped<IAuthenticationService, AuthenticationService>();
 
+services.AddScoped<ISessionUserService, SessionUserService>();
+
 services.AddScoped<ICountryManagementService, CountryManagementService>();
 services.AddScoped<IStateManagementService, StateManagementService>();
 services.AddScoped<ICityManagementService, CityManagementService>();

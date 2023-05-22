@@ -8,6 +8,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using Utils;
 
 namespace Server.Services;
 
@@ -19,10 +20,12 @@ public class TicketGroupManagementService : ITicketGroupManagementService
     private readonly IDataShaper<TicketGroupDto> _ticketGroupDataShaper;
     private readonly IDataShaper<TicketGroupWithTicketsDto> _ticketGroupWithTicketsDataShaper;
     private readonly IPager<ExpandoObject> _pager;
+    private readonly ISessionUserService _sessionUserService;
 
     public TicketGroupManagementService(ApplicationDbContext dbContext, IMapper mapper, 
         ISortHelper<ExpandoObject> ticketGroupSortHelper, IDataShaper<TicketGroupDto> ticketGroupDataShaper, 
-        IDataShaper<TicketGroupWithTicketsDto> ticketGroupWithTicketsDataShaper, IPager<ExpandoObject> pager)
+        IDataShaper<TicketGroupWithTicketsDto> ticketGroupWithTicketsDataShaper, IPager<ExpandoObject> pager,
+        ISessionUserService sessionUserService)
     {
         _dbContext = dbContext;
         _mapper = mapper;
@@ -30,6 +33,7 @@ public class TicketGroupManagementService : ITicketGroupManagementService
         _ticketGroupDataShaper = ticketGroupDataShaper;
         _ticketGroupWithTicketsDataShaper = ticketGroupWithTicketsDataShaper;
         _pager = pager;
+        _sessionUserService = sessionUserService;
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, TicketGroupDto ticketGroup)> AddTicketGroup(CreateTicketGroupDto createTicketGroupDto)
@@ -62,6 +66,16 @@ public class TicketGroupManagementService : ITicketGroupManagementService
         GetTicketGroups(TicketGroupParameters parameters)
     {
         var dbTicketGroups = _dbContext.TicketGroups.AsQueryable();
+
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            dbTicketGroups = dbTicketGroups.Where(tg => tg.UserId == _sessionUserService.GetAuthUserId());
+        }
+
+        if (!dbTicketGroups.Any())
+        {
+            return (false, new NotFoundResult(), null!, null!);
+        }
 
         FilterTicketGroupsByUserId(ref dbTicketGroups, parameters.UserId);
         
@@ -103,6 +117,16 @@ public class TicketGroupManagementService : ITicketGroupManagementService
             .ThenInclude(t => t.VehicleEnrollment)
             .AsQueryable();
         
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            dbTicketGroups = dbTicketGroups.Where(tg => tg.UserId == _sessionUserService.GetAuthUserId());
+        }
+
+        if (!dbTicketGroups.Any())
+        {
+            return (false, new NotFoundResult(), null!, null!);
+        }
+
         FilterTicketGroupsByUserId(ref dbTicketGroups, parameters.UserId);
 
         var ticketGroupDtos = _mapper.ProjectTo<TicketGroupWithTicketsDto>(dbTicketGroups); 
@@ -143,10 +167,16 @@ public class TicketGroupManagementService : ITicketGroupManagementService
         
         var dbTicketGroup = await _dbContext.TicketGroups.Where(tg => tg.Id == id)
             .FirstAsync();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString() &&
+            dbTicketGroup.UserId != _sessionUserService.GetAuthUserId())
+        {
+            return (false, new UnauthorizedResult(), null!);
+        }
 
         if (String.IsNullOrWhiteSpace(fields))
         {
-            fields = RouteParameters.DefaultFields;
+            fields = TicketGroupParameters.DefaultFields;
         }
         
         var ticketGroupDto = _mapper.Map<TicketGroupDto>(dbTicketGroup);
@@ -165,10 +195,16 @@ public class TicketGroupManagementService : ITicketGroupManagementService
         var dbTicketGroup = await _dbContext.TicketGroups.Where(tg => tg.Id == id)
             .Include(tg => tg.Tickets)
             .FirstAsync();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString() &&
+            dbTicketGroup.UserId != _sessionUserService.GetAuthUserId())
+        {
+            return (false, new UnauthorizedResult(), null!);
+        }
 
         if (String.IsNullOrWhiteSpace(fields))
         {
-            fields = RouteParameters.DefaultFields;
+            fields = TicketGroupParameters.DefaultFields;
         }
         
         var ticketGroupDto = _mapper.Map<TicketGroupDto>(dbTicketGroup);

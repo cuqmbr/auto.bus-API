@@ -8,6 +8,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using Utils;
 
 namespace Server.Services;
 
@@ -18,21 +19,32 @@ public class ReviewManagementService : IReviewManagementService
     private readonly ISortHelper<ExpandoObject> _reviewSortHelper;
     private readonly IDataShaper<ReviewDto> _reviewDataShaper;
     private readonly IPager<ExpandoObject> _pager;
+    private readonly ISessionUserService _sessionUserService;
 
     public ReviewManagementService(ApplicationDbContext dbContext,
         IMapper mapper, ISortHelper<ExpandoObject> reviewSortHelper, 
-        IDataShaper<ReviewDto> reviewDataShaper, IPager<ExpandoObject> pager)
+        IDataShaper<ReviewDto> reviewDataShaper, IPager<ExpandoObject> pager,
+        ISessionUserService sessionUserService)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _reviewSortHelper = reviewSortHelper;
         _reviewDataShaper = reviewDataShaper;
         _pager = pager;
+        _sessionUserService = sessionUserService;
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, ReviewDto review)> AddReview(CreateReviewDto createReviewDto)
     {
         var review = _mapper.Map<Review>(createReviewDto);
+
+        var hasTicketToEnrollment = await _dbContext.TicketGroups.AnyAsync(tg =>
+            tg.UserId == _sessionUserService.GetAuthUserId() && tg.Tickets.Any(t => t.VehicleEnrollmentId == review.VehicleEnrollmentId));
+
+        if (!hasTicketToEnrollment && _sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            return (false, new UnauthorizedResult(), null!);
+        }
     
         await _dbContext.Reviews.AddAsync(review);
         await _dbContext.SaveChangesAsync();
@@ -47,6 +59,16 @@ public class ReviewManagementService : IReviewManagementService
             .Include(r => r.VehicleEnrollment).ThenInclude(ve => ve.Vehicle)
             .ThenInclude(v => v.Company).Include(r => r.User)
             .AsQueryable();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            dbReviews = dbReviews.Where(r => r.UserId == _sessionUserService.GetAuthUserId());
+        }
+
+        if (!dbReviews.Any())
+        {
+            return (false, new NotFoundResult(), null!, null!);
+        }
 
         FilterByReviewRating(ref dbReviews, parameters.FromRating, parameters.ToRating);
         FilterByReviewComment(ref dbReviews, parameters.Comment);
@@ -129,6 +151,12 @@ public class ReviewManagementService : IReviewManagementService
             .Include(r => r.VehicleEnrollment).ThenInclude(ve => ve.Vehicle)
             .ThenInclude(v => v.Company).Include(r => r.User)
             .FirstAsync();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString() &&
+            dbReview.UserId != _sessionUserService.GetAuthUserId())
+        {
+            return (false, new UnauthorizedResult(), null!);
+        }
 
         if (String.IsNullOrWhiteSpace(fields))
         {
@@ -145,6 +173,12 @@ public class ReviewManagementService : IReviewManagementService
     {
         var review = _mapper.Map<Review>(updateReviewDto);
         _dbContext.Entry(review).State = EntityState.Modified;
+        
+        if (!await _sessionUserService.IsAuthUserReview(updateReviewDto.Id) &&
+            _sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            return (false, new UnauthorizedResult(), null!);
+        }
         
         try
         {
@@ -165,12 +199,17 @@ public class ReviewManagementService : IReviewManagementService
 
     public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteReview(int id)
     {
-        var dbReview = await _dbContext.Reviews.FirstOrDefaultAsync(r => r.Id == id);
-    
-        if (dbReview == null)
+        if (!await IsReviewExists(id))
         {
-            return (false,new NotFoundResult());
+            return (false, new NotFoundResult());
         }
+        
+        if (!await _sessionUserService.IsAuthUserReview(id))
+        {
+            return (false, new UnauthorizedResult());
+        }
+        
+        var dbReview = await _dbContext.Reviews.FirstAsync(r => r.Id == id);
     
         _dbContext.Reviews.Remove(dbReview);
         await _dbContext.SaveChangesAsync();

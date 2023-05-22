@@ -9,6 +9,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using Utils;
 
 namespace Server.Services;
 
@@ -21,11 +22,12 @@ public class DriverManagementService : IDriverManagementService
     private readonly ISortHelper<ExpandoObject> _userSortHelper;
     private readonly IDataShaper<DriverDto> _userDataShaper;
     private readonly IPager<ExpandoObject> _pager;
+    private readonly ISessionUserService _sessionUserService;
 
     public DriverManagementService(IUserManagementService userManagementService, IMapper mapper,
         UserManager<User> userManager, ApplicationDbContext dbContext,
         ISortHelper<ExpandoObject> userSortHelper, IDataShaper<DriverDto> userDataShaper,
-        IPager<ExpandoObject> pager)
+        IPager<ExpandoObject> pager, ISessionUserService sessionUserService)
     {
         _userManagementService = userManagementService;
         _userManager = userManager;
@@ -33,11 +35,30 @@ public class DriverManagementService : IDriverManagementService
         _userSortHelper = userSortHelper;
         _userDataShaper = userDataShaper;
         _pager = pager;
+        _sessionUserService = sessionUserService;
         _mapper = mapper;
     }
 
     public async Task<(bool isSucceeded, IActionResult? actionResult, DriverDto driver)> AddDriver(CreateDriverDto createDriverDto)
     {
+        
+        if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
+        {
+            if (createDriverDto.CompanyId == null)
+            {
+                return (false, new BadRequestObjectResult("CompanyId must have a value"), null!);
+            }
+        }
+        else
+        {
+            var isAuthUserCompanyOwnerResult = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!isAuthUserCompanyOwnerResult.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+            createDriverDto.CompanyId = isAuthUserCompanyOwnerResult.companyId;
+        }
+        
         var createUserDto = _mapper.Map<CreateUserDto>(createDriverDto);
         
         createUserDto.Roles = new List<string> { "Driver" };
@@ -50,8 +71,8 @@ public class DriverManagementService : IDriverManagementService
             return (false, result.actionResult, null);
         }
 
-        var driverDto = _mapper.Map<DriverDto>(createUserDto);
-        _dbContext.CompanyDrivers.Add(new CompanyDriver { CompanyId = createDriverDto.CompanyId, DriverId = driverDto.Id });
+        var driverDto = _mapper.Map<DriverDto>(result.user);
+        _dbContext.CompanyDrivers.Add(new CompanyDriver { CompanyId = (int) createDriverDto.CompanyId, DriverId = driverDto.Id });
         await _dbContext.SaveChangesAsync();
 
         driverDto.Roles = result.user.Roles;
@@ -63,6 +84,22 @@ public class DriverManagementService : IDriverManagementService
     {
         var dbUsers = _userManager.Users.Include(u => u.Employer)
             .Where(u => u.Employer != null).AsQueryable();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!, null!);
+            }
+            
+            dbUsers = dbUsers.Where(u => u.Employer.CompanyId == result.companyId);
+        }
+
+        if (!dbUsers.Any())
+        {
+            return (false, new NotFoundResult(), null!, null!);
+        }
 
         FilterByCompanyId(ref dbUsers, parameters.CompanyId);
         SearchByAllUserFields(ref dbUsers, parameters.Search);
@@ -111,6 +148,14 @@ public class DriverManagementService : IDriverManagementService
 
     public async Task<(bool isSucceeded, IActionResult? actionResult, ExpandoObject driver)> GetDriver(string id, string? fields)
     {
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyDriver(id))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         var dbUser = await _userManager.Users.Include(u => u.Employer).
             FirstOrDefaultAsync(u => u.Id == id);
         
@@ -132,6 +177,15 @@ public class DriverManagementService : IDriverManagementService
 
     public async Task<(bool isSucceeded, IActionResult? actionResult, DriverDto driver)> UpdateDriver(string id, UpdateDriverDto updateDriverDto)
     {
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!(await _sessionUserService.IsAuthUserCompanyOwner()).isCompanyOwner &&
+                !await _sessionUserService.IsAuthUserCompanyDriver(id))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         var updateUserDto = _mapper.Map<UpdateUserDto>(updateDriverDto);
         var result = await _userManagementService.UpdateUser(id, updateUserDto);
 
@@ -140,6 +194,14 @@ public class DriverManagementService : IDriverManagementService
 
     public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteDriver(string id)
     {
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyDriver(id))
+            {
+                return (false, new UnauthorizedResult());
+            }
+        }
+        
         return await _userManagementService.DeleteUser(id);
     }
 }

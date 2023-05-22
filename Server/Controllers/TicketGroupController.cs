@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/ticketGroups")]
 [ApiController]
 public class TicketGroupController : ControllerBase
@@ -17,6 +19,7 @@ public class TicketGroupController : ControllerBase
         _ticketGroupManagementService = ticketGroupManagementService;
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost]
     public async Task<IActionResult> AddTicketGroup(CreateTicketGroupDto ticketGroup)
     {
@@ -30,6 +33,7 @@ public class TicketGroupController : ControllerBase
         return CreatedAtAction(nameof(GetTicketGroup), new {id = result.ticketGroup.Id}, result.ticketGroup);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPost("withTickets")]
     public async Task<IActionResult> AddTicketGroupWithTickets(CreateTicketGroupWithTicketsDto ticketGroup)
     {
@@ -99,6 +103,7 @@ public class TicketGroupController : ControllerBase
         return Ok(result.ticketGroup);
     }
 
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTicketGroup(int id, UpdateTicketGroupDto ticketGroup)
     {
@@ -117,6 +122,7 @@ public class TicketGroupController : ControllerBase
         return Ok(result.ticketGroup);
     }
     
+    [Authorize(Policy = "AdministratorAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTicketGroup(int id)
     {
@@ -130,4 +136,3 @@ public class TicketGroupController : ControllerBase
         return NoContent();
     }
 }
-

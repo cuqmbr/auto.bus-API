@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,7 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
-
+[Authorize]
 [Route("api/vehicleEnrollments")]
 [ApiController]
 public class VehicleEnrollmentController : ControllerBase
@@ -18,6 +19,7 @@ public class VehicleEnrollmentController : ControllerBase
         _vehicleEnrollmentManagementService = vehicleEnrollmentManagementService;
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost]
     public async Task<IActionResult> AddEnrollment(CreateVehicleEnrollmentDto enrollment)
     {
@@ -31,6 +33,7 @@ public class VehicleEnrollmentController : ControllerBase
         return CreatedAtAction(nameof(GetEnrollment), new {id = result.enrollment.Id}, result.enrollment);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost("withDetails")]
     public async Task<IActionResult> AddEnrollmentWithDetails(CreateVehicleEnrollmentWithDetailsDto enrollment)
     {
@@ -44,6 +47,7 @@ public class VehicleEnrollmentController : ControllerBase
         return CreatedAtAction(nameof(GetEnrollment), new {id = result.enrollment.Id}, result.enrollment);
     }
 
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet]
     public async Task<IActionResult> GetEnrollments([FromQuery] VehicleEnrollmentParameters parameters)
     {
@@ -59,6 +63,7 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollments);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("withDetails")]
     public async Task<IActionResult> GetEnrollments([FromQuery] VehicleEnrollmentWithDetailsParameters parameters)
     {
@@ -74,6 +79,7 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollments);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEnrollment(int id, [FromQuery] string? fields)
     {
@@ -87,6 +93,7 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollment);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("withDetails/{id}")]
     public async Task<IActionResult> GetEnrollmentWithDetails(int id, [FromQuery] string? fields)
     {
@@ -100,6 +107,7 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollment);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateVehicle(int id, UpdateVehicleEnrollmentDto enrollment)
     {
@@ -113,6 +121,7 @@ public class VehicleEnrollmentController : ControllerBase
         return Ok(result.enrollment);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEnrollment(int id)
     {

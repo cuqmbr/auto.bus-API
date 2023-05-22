@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/drivers")]
 [ApiController]
 public class DriverController : ControllerBase
@@ -17,6 +19,7 @@ public class DriverController : ControllerBase
         _driverManagementService = driverManagementService;
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost]
     public async Task<IActionResult> AddDriver(CreateDriverDto Driver)
     {
@@ -30,6 +33,7 @@ public class DriverController : ControllerBase
         return CreatedAtAction(nameof(GetDriver), new {id = result.driver.Id}, result.driver);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet]
     public async Task<IActionResult> GetDrivers([FromQuery] CompanyDriverParameters parameters)
     {
@@ -45,6 +49,7 @@ public class DriverController : ControllerBase
         return Ok(result.drivers);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetDriver(string id, [FromQuery] string? fields)
     {
@@ -58,6 +63,7 @@ public class DriverController : ControllerBase
         return Ok(result.driver);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDriver(string id, UpdateDriverDto driver)
     {
@@ -71,6 +77,7 @@ public class DriverController : ControllerBase
         return Ok(result.driver);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDriver(string id)
     {

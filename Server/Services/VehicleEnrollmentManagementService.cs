@@ -8,6 +8,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using Utils;
 
 namespace Server.Services;
 
@@ -19,11 +20,13 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
     private readonly IDataShaper<VehicleEnrollmentDto> _enrollmentDataShaper;
     private readonly IDataShaper<VehicleEnrollmentWithDetailsDto> _enrollmentWithDetailsDataShaper;
     private readonly IPager<ExpandoObject> _pager;
+    private readonly ISessionUserService _sessionUserService;
 
     public VehicleEnrollmentManagementService(ApplicationDbContext dbContext,
         IMapper mapper, ISortHelper<ExpandoObject> enrollmentSortHelper, 
         IDataShaper<VehicleEnrollmentDto> enrollmentDataShaper, IPager<ExpandoObject> pager, 
-        IDataShaper<VehicleEnrollmentWithDetailsDto> enrollmentWithDetailsDataShaper)
+        IDataShaper<VehicleEnrollmentWithDetailsDto> enrollmentWithDetailsDataShaper,
+        ISessionUserService sessionUserService)
     {
         _dbContext = dbContext;
         _mapper = mapper;
@@ -31,10 +34,20 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         _enrollmentDataShaper = enrollmentDataShaper;
         _pager = pager;
         _enrollmentWithDetailsDataShaper = enrollmentWithDetailsDataShaper;
+        _sessionUserService = sessionUserService;
     }
 
     public async Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentDto enrollment)> AddEnrollment(CreateVehicleEnrollmentDto createEnrollmentDto)
     {
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!(await _sessionUserService.IsAuthUserCompanyOwner()).isCompanyOwner &&
+                !await _sessionUserService.IsAuthUserCompanyVehicle(createEnrollmentDto.VehicleId))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         var enrollment = _mapper.Map<VehicleEnrollment>(createEnrollmentDto);
     
         await _dbContext.VehicleEnrollments.AddAsync(enrollment);
@@ -45,6 +58,15 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
     
     public async Task<(bool isSucceed, IActionResult? actionResult, VehicleEnrollmentWithDetailsDto enrollment)> AddEnrollmentWithDetails(CreateVehicleEnrollmentWithDetailsDto createEnrollmentDto)
     {
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!(await _sessionUserService.IsAuthUserCompanyOwner()).isCompanyOwner &&
+                !await _sessionUserService.IsAuthUserCompanyVehicle(createEnrollmentDto.VehicleId))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         var enrollment = _mapper.Map<VehicleEnrollment>(createEnrollmentDto);
     
         await _dbContext.VehicleEnrollments.AddAsync(enrollment);
@@ -62,6 +84,18 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
     {
         var dbEnrollments = _dbContext.VehicleEnrollments
             .AsQueryable();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!, null!);
+            }
+            
+            dbEnrollments = dbEnrollments.Include(e => e.Vehicle)
+                .Where(e => e.Vehicle.CompanyId == result.companyId);
+        }
 
         SearchByAllEnrollmentFields(ref dbEnrollments, parameters.Search);
         FilterByEnrollmentVehicleId(ref dbEnrollments, parameters.VehicleId);
@@ -166,6 +200,18 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         var dbEnrollments = _dbContext.VehicleEnrollments
             .Include(ve => ve.RouteAddressDetails)
             .AsQueryable();
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            var result = await _sessionUserService.IsAuthUserCompanyOwner();
+            if (!result.isCompanyOwner)
+            {
+                return (false, new UnauthorizedResult(), null!, null!);
+            }
+            
+            dbEnrollments = dbEnrollments.Include(e => e.Vehicle)
+                .Where(e => e.Vehicle.CompanyId == result.companyId);
+        }
 
         SearchByAllEnrollmentFields(ref dbEnrollments, parameters.Search);
         FilterByEnrollmentVehicleId(ref dbEnrollments, parameters.VehicleId);
@@ -335,6 +381,14 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
             return (false, new NotFoundResult(), null!);
         }
         
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyVehicleEnrollment(id))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         var dbEnrollment = await _dbContext.VehicleEnrollments.Where(e => e.Id == id)
             .FirstAsync();
 
@@ -354,6 +408,14 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         if (!await IsEnrollmentExists(id))
         {
             return (false, new NotFoundResult(), null!);
+        }
+        
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyVehicleEnrollment(id))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
         }
 
         var dbEnrollment = await _dbContext.VehicleEnrollments
@@ -376,6 +438,15 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
         var enrollment = _mapper.Map<VehicleEnrollment>(updateEnrollmentDto);
         _dbContext.Entry(enrollment).State = EntityState.Modified;
         
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!(await _sessionUserService.IsAuthUserCompanyOwner()).isCompanyOwner &&
+                !await _sessionUserService.IsAuthUserCompanyVehicle(updateEnrollmentDto.VehicleId))
+            {
+                return (false, new UnauthorizedResult(), null!);
+            }
+        }
+        
         try
         {
             await _dbContext.SaveChangesAsync();
@@ -397,12 +468,20 @@ public class VehicleEnrollmentManagementService : IVehicleEnrollmentManagementSe
 
     public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteEnrollment(int id)
     {
-        var dbEnrollment = await _dbContext.VehicleEnrollments.FirstOrDefaultAsync(e => e.Id == id);
-    
-        if (dbEnrollment == null)
+        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
+        {
+            if (!await _sessionUserService.IsAuthUserCompanyVehicleEnrollment(id))
+            {
+                return (false, new UnauthorizedResult());
+            }
+        }
+        
+        if (!await IsEnrollmentExists(id))
         {
             return (false, new NotFoundResult());
         }
+    
+        var dbEnrollment = await _dbContext.VehicleEnrollments.FirstAsync(e => e.Id == id);
     
         _dbContext.VehicleEnrollments.Remove(dbEnrollment);
         await _dbContext.SaveChangesAsync();

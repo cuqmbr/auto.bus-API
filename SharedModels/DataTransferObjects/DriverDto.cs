@@ -7,7 +7,7 @@ public class DriverDto : UserDto
 
 public class CreateDriverDto : CreateUserDto
 {
-    public int CompanyId { get; set; }
+    public int? CompanyId { get; set; }
 
     public override IList<string>? Roles { get; set; }
 }

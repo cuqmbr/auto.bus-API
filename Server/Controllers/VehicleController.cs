@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -17,6 +18,7 @@ public class VehicleController : ControllerBase
         _vehicleManagementService = vehicleManagementService;
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost]
     public async Task<IActionResult> AddVehicle(CreateVehicleDto vehicle)
     {
@@ -30,6 +32,7 @@ public class VehicleController : ControllerBase
         return CreatedAtAction(nameof(GetVehicle), new {id = result.vehicle.Id}, result.vehicle);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpGet]
     public async Task<IActionResult> GetVehicles([FromQuery] VehicleParameters parameters)
     {
@@ -45,6 +48,7 @@ public class VehicleController : ControllerBase
         return Ok(result.vehicles);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetVehicle(int id, [FromQuery] string? fields)
     {
@@ -58,6 +62,7 @@ public class VehicleController : ControllerBase
         return Ok(result.vehicle);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateVehicle(int id, UpdateVehicleDto vehicle)
     {
@@ -71,6 +76,7 @@ public class VehicleController : ControllerBase
         return Ok(result.vehicle);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteVehicle(int id)
     {

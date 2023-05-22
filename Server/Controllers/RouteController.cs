@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Server.Services;
@@ -6,6 +7,7 @@ using SharedModels.QueryParameters.Objects;
 
 namespace Server.Controllers;
 
+[Authorize]
 [Route("api/routes")]
 [ApiController]
 public class RouteController : ControllerBase
@@ -17,6 +19,7 @@ public class RouteController : ControllerBase
         _routeManagementService = routeManagementService;
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost]
     public async Task<IActionResult> AddRoute(CreateRouteDto route)
     {
@@ -30,6 +33,7 @@ public class RouteController : ControllerBase
         return CreatedAtAction(nameof(GetRoute), new {id = result.route.Id}, result.route);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPost("withAddresses")]
     public async Task<IActionResult> AddRouteWithAddresses(CreateRouteWithAddressesDto route)
     {
@@ -43,6 +47,7 @@ public class RouteController : ControllerBase
         return CreatedAtAction(nameof(GetRoute), new {id = result.route.Id}, result.route);
     }
 
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet]
     public async Task<IActionResult> GetRoutes([FromQuery] RouteParameters parameters)
     {
@@ -58,6 +63,7 @@ public class RouteController : ControllerBase
         return Ok(result.routes);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("withAddresses")]
     public async Task<IActionResult> GetRouteWithAddresses([FromQuery] RouteWithAddressesParameters parameters)
     {
@@ -73,6 +79,7 @@ public class RouteController : ControllerBase
         return Ok(result.routes);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetRoute(int id, [FromQuery] string? fields)
     {
@@ -91,6 +98,7 @@ public class RouteController : ControllerBase
         return Ok(result.route);
     }
     
+    [Authorize(Policy = "DriverAccess")]
     [HttpGet("withAddresses/{id}")]
     public async Task<IActionResult> GetRouteWithAddresses(int id, [FromQuery] string? fields)
     {
@@ -109,6 +117,7 @@ public class RouteController : ControllerBase
         return Ok(result.route);
     }
 
+    [Authorize(Policy = "CompanyAccess")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateRoute(int id, UpdateRouteDto route)
     {
@@ -127,6 +136,7 @@ public class RouteController : ControllerBase
         return Ok(result.route);
     }
     
+    [Authorize(Policy = "CompanyAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRoute(int id)
     {

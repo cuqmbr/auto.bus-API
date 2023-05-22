@@ -8,17 +8,20 @@ public class VehicleEnrollmentDto : CreateVehicleEnrollmentDto
 
     public IList<InVehicleEnrollmentTicketDto> Tickets { get; set; } = null!;
     public IList<InVehicleEnrollmentReviewDto> Reviews { get; set; } = null!;
+    
+    public bool IsCanceled { get; set; }
+    public string? CancelationComment { get; set; }
 }
 
 public class CreateVehicleEnrollmentDto
 {
     [Required]
     public int VehicleId { get; set; }
-    public VehicleDto Vehicle { get; set; } = null!;
+    public VehicleDto? Vehicle { get; set; } = null!;
     
     [Required]
     public int RouteId { get; set; }
-    public RouteDto Route { get; set; } = null!;
+    public RouteDto? Route { get; set; } = null!;
 
     [Required]
     [DataType(DataType.DateTime)]
@@ -31,9 +34,9 @@ public class UpdateVehicleEnrollmentDto : CreateVehicleEnrollmentDto
     public int Id { get; set; }
     
     public TimeSpan DelayTimeSpan { get; set; } = TimeSpan.Zero;
-    
-    public bool IsCanceled { get; set; } = false;
-    public string CancelationComment { get; set; } = null!;
+
+    public bool? IsCanceled { get; set; } = false;
+    public string? CancelationComment { get; set; }
 }
 
 public class CreateVehicleEnrollmentWithDetailsDto : CreateVehicleEnrollmentDto

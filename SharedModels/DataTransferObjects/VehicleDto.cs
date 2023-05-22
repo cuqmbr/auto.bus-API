@@ -43,8 +43,7 @@ public class CreateVehicleDto
     [Required]
     public bool HasBelts { get; set; } = false;
     
-    [Required]
-    public int CompanyId { get; set; }
+    public int? CompanyId { get; set; }
 }
 
 public class UpdateVehicleDto : CreateVehicleDto
