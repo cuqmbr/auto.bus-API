@@ -9,7 +9,6 @@ public class TicketGroup
     
     public DateTime PurchaseDateTimeUtc { get; set; } = DateTime.MinValue;
     public bool IsReturned { get; set; } = false;
-
     public string UserId { get; set; } = null!;
     public User User { get; set; } = null!;
     
@@ -89,4 +88,5 @@ public class TicketGroup
             .First(ra => ra.AddressId == Tickets.Last().LastRouteAddressId)
             .Address;
     }
+    public bool IsPurchased() => PurchaseDateTimeUtc != DateTime.MinValue;
 }
