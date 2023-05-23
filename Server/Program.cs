@@ -12,7 +12,7 @@ using Server.Data;
 using Server.Helpers;
 using Server.Models;
 using Server.Services;
-using SharedModels.DataTransferObjects;
+using SharedModels.DataTransferObjects.Model;
 using Utils;
 
 var builder = WebApplication.CreateBuilder(args);

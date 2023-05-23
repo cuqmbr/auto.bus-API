@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SharedModels.DataTransferObjects;
+namespace SharedModels.DataTransferObjects.Model;
 
 public class RouteAddressDto : CreateRouteAddressDto
 {

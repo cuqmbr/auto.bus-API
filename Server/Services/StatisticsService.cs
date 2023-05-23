@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Helpers;
-using SharedModels.DataTransferObjects;
+using SharedModels.DataTransferObjects.Model;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Statistics;
 

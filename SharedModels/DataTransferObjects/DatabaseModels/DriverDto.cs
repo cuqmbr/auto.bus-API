@@ -1,4 +1,4 @@
-namespace SharedModels.DataTransferObjects;
+namespace SharedModels.DataTransferObjects.Model;
 
 public class DriverDto : UserDto
 {

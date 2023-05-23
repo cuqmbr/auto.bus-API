@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Utils;
 
-namespace SharedModels.DataTransferObjects;
+namespace SharedModels.DataTransferObjects.Model;
 
 public class UserDto
 {

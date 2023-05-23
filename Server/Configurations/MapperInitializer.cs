@@ -1,6 +1,6 @@
 using AutoMapper;
 using Server.Models;
-using SharedModels.DataTransferObjects;
+using SharedModels.DataTransferObjects.Model;
 using Route = Server.Models.Route;
 
 namespace Server.Configurations;

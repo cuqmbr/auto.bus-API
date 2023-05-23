@@ -1,6 +1,6 @@
 using System.Dynamic;
 using Microsoft.AspNetCore.Mvc;
-using SharedModels.DataTransferObjects;
+using SharedModels.DataTransferObjects.Model;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
 

@@ -1,9 +1,9 @@
-using System.Dynamic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
-using Server.Helpers;
 using Server.Models;
+using SharedModels.DataTransferObjects;
+using SharedModels.DataTransferObjects.Services;
 using SharedModels.Responses;
 
 namespace Server.Services;
@@ -17,8 +17,8 @@ public class VehicleEnrollmentSearchService
         _dbContext = dbContext;
     }
 
-    public async Task<(bool isSucceed, IActionResult? actionResult, IList<EnrollmentGroup> result)>
-        GetRoute(int fromCityId, int toCityId, DateTime date)
+    public async Task<(bool isSucceed, IActionResult actionResult, IList<EnrollmentGroup> result)>
+        GetEnrollments(int fromCityId, int toCityId, DateTime date)
     {
         var dbEnrollments = await _dbContext.VehicleEnrollments
             .Include(ve => ve.Tickets)
@@ -247,7 +247,7 @@ public class VehicleEnrollmentSearchService
             return (false, new NotFoundResult(), null!);
         }
         
-        return (true, null, result.EnrollmentGroups);
+        return (true, null!, result.EnrollmentGroups);
 
         DateTime GetDepartureTime(VehicleEnrollment enrollment)
         {
@@ -314,5 +314,68 @@ public class VehicleEnrollmentSearchService
 
             return result;
         }
+    }
+
+    public async Task<(bool isSucceed, IActionResult actionResult, IList<AutocompleteCityDto> cities)>
+        GetPopularCityNames(string type, string name, int limit)
+    {
+        var dbCities = await _dbContext.Cities.Include(c => c.State).ThenInclude(s => s.Country)
+            .Where(c => EF.Functions.ILike(c.Name, $"%{name}%")).ToArrayAsync();
+        var dbTicketGroups = await _dbContext.TicketGroups.Include(tg => tg.Tickets)
+            .ThenInclude(t => t.VehicleEnrollment).ThenInclude(ve => ve.Route).ThenInclude(r => r.RouteAddresses)
+            .ThenInclude(ra => ra.Address).ThenInclude(a => a.City)
+            .Where(tg => tg.PurchaseDateTimeUtc >= DateTime.UtcNow.AddDays(-60))
+            .ToArrayAsync();
+
+        var cityFrequency = dbCities.ToDictionary(key => key, value => 0);
+
+        foreach (var tg in dbTicketGroups)
+        {
+            var departureCity = tg.GetDepartureAddress().City;
+            var arrivalCity = tg.GetArrivalAddress().City;
+            
+            if ((type == "from" || type == "any") && cityFrequency.ContainsKey(departureCity))
+            {
+                cityFrequency[departureCity]++;
+            }
+            
+            if ((type == "to" || type == "any") && cityFrequency.ContainsKey(arrivalCity))
+            {
+                cityFrequency[arrivalCity]++;
+            }
+        }
+
+        var orderedCityFrequency = cityFrequency.OrderByDescending(kvp => kvp.Value);
+        
+        int order = 1;
+        var popularCitiesDto = new List<AutocompleteCityDto>();
+        foreach (var city in orderedCityFrequency.Take(limit).Select(kvp => kvp.Key))
+        {
+            popularCitiesDto.Add(new AutocompleteCityDto
+            {
+                Id =  city.Id,
+                Name = city.Name,
+                StateName = city.State.Name,
+                CountryName = city.State.Country.Name,
+                FullName = city.GetFullName(),
+                Order = order
+            });
+            
+            order++;
+        }
+
+        return (true, null!, popularCitiesDto);
+    }
+
+    public async Task<(bool isSucceed, IActionResult actionResult, IList<AutocompleteCityDto> cities)>
+        GetPopularCityNames(string type, int limit)
+    {
+        return await GetPopularCityNames(type, "", limit);
+    }
+    
+    public async Task<(bool isSucceed, IActionResult actionResult, IList<AutocompleteCityDto> cities)>
+            GetPopularCityNames(int limit)
+    {
+        return await GetPopularCityNames("any", "", limit);
     }
 }
