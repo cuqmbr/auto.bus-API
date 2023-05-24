@@ -36,22 +36,50 @@ public class MapperInitializer : Profile
         CreateMap<Address, CreateAddressInRouteAddress>().ReverseMap();
         CreateMap<Address, AddressInRouteAddress>().ReverseMap();
 
-        CreateMap<RouteAddress, RouteAddressDto>().ReverseMap();
+        CreateMap<RouteAddress, RouteAddressDto>()
+            .ForMember(d => d.AddressName, opt => opt.MapFrom(src => src.Address.Name))
+            .ForMember(d => d.CityName, opt => opt.MapFrom(src => src.Address.City.Name))
+            .ForMember(d => d.StateName, opt => opt.MapFrom(src => src.Address.City.State.Name))
+            .ForMember(d => d.CountryName, opt => opt.MapFrom(src => src.Address.City.State.Country.Name))
+            .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.Address.GetFullName()))
+            .ForMember(d => d.Latitude, opt => opt.MapFrom(src => src.Address.Latitude))
+            .ForMember(d => d.Longitude, opt => opt.MapFrom(src => src.Address.Longitude));
+        CreateMap<RouteAddressDto, RouteAddress>();
         CreateMap<RouteAddress, CreateRouteAddressDto>().ReverseMap();
         CreateMap<RouteAddress, UpdateRouteAddressDto>().ReverseMap();
-        CreateMap<RouteAddress, CreateRouteAddressWithAddressDto>().ReverseMap();
-        CreateMap<RouteAddress, RouteAddressWithAddressDto>().ReverseMap();
 
         CreateMap<Route, RouteDto>().ReverseMap();
         CreateMap<Route, CreateRouteDto>().ReverseMap();
         CreateMap<Route, UpdateRouteDto>().ReverseMap();
-        CreateMap<Route, CreateRouteWithAddressesDto>().ReverseMap();
-        CreateMap<Route, RouteWithAddressesDto>().ReverseMap();
 
-        CreateMap<Ticket, TicketDto>().ReverseMap();
-        CreateMap<TicketGroup, TicketDto>();
+        CreateMap<Ticket, TicketDto>()
+            .ForMember(d => d.Addresses,
+                opt => opt.MapFrom(src => src.VehicleEnrollment.Route.RouteAddresses.Select(ra => ra.Address)));
         
-        CreateMap<TicketGroup, TicketGroupDto>().ReverseMap();
+        CreateMap<TicketGroup, TicketGroupDto>()
+            .ForMember(d => d.DepartureAddressName,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureAddress().Name))
+            .ForMember(d => d.DepartureCityName,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureAddress().City.Name))
+            .ForMember(d => d.DepartureStateName,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureAddress().City.State.Name))
+            .ForMember(d => d.DepartureCountryName,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureAddress().City.State.Country.Name))
+            .ForMember(d => d.DepartureFullName,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureAddress().GetFullName()))
+            .ForMember(d => d.DepartureDateTime,
+                opt => opt.MapFrom(src => src.Tickets.First().GetDepartureTime()))
+            .ForMember(d => d.ArrivalAddressName,
+                opt => opt.MapFrom(src => src.Tickets.Last().GetArrivalAddress().Name))
+            .ForMember(d => d.ArrivalCityName,
+                opt => opt.MapFrom(src => src.Tickets.Last().GetArrivalAddress().City.Name))
+            .ForMember(d => d.ArrivalStateName,
+                opt => opt.MapFrom(src => src.Tickets.Last().GetArrivalAddress().City.State.Name))
+            .ForMember(d => d.ArrivalCountryName,
+                opt => opt.MapFrom(src => src.Tickets.Last().GetArrivalAddress().City.State.Country.Name))
+            .ForMember(d => d.ArrivalFullName,
+                opt =>opt.MapFrom(src => src.Tickets.Last().GetArrivalAddress().GetFullName()))
+            .ForMember(d => d.ArrivalDateTime, opt => opt.MapFrom(src => src.Tickets.Last().GetArrivalTime()));
 
         CreateMap<Review, ReviewDto>().ReverseMap();
         CreateMap<Review, CreateReviewDto>().ReverseMap();
@@ -83,9 +111,6 @@ public class MapperInitializer : Profile
         CreateMap<CreateUserDto, CreateDriverDto>().ReverseMap();
         CreateMap<CreateDriverDto, UpdateDriverDto>().ReverseMap();
         
-        CreateMap<RouteAddressDetails, RouteAddressDetailsDto>().ReverseMap();
-        CreateMap<RouteAddressDetails, CreateRouteAddressDetailsDto>().ReverseMap();
-        CreateMap<RouteAddressDetails, UpdateRouteAddressDetailsDto>().ReverseMap();
         CreateMap<RouteAddressDetails, RouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
         CreateMap<RouteAddressDetails, CreateRouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
     }

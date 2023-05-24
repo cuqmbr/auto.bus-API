@@ -212,7 +212,7 @@ public class TicketGroupManagementService : ITicketGroupManagementService
         return ticketGroupDto;
     }
 
-    public async Task<bool> IsTicketGroupExist(int id)
+    private async Task<bool> IsTicketGroupExist(int id)
     {
         return await _dbContext.TicketGroups.AnyAsync(tg => tg.Id == id);
     }

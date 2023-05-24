@@ -120,7 +120,6 @@ services.AddScoped<ICompanyManagementService, CompanyManagementService>();
 services.AddScoped<IVehicleManagementService, VehicleManagementService>();
 services.AddScoped<IVehicleEnrollmentManagementService, VehicleEnrollmentManagementService>();
 services.AddScoped<IRouteManagementService, RouteManagementService>();
-services.AddScoped<IRouteAddressManagementService, RouteAddressManagementService>();
 services.AddScoped<IUserManagementService, UserManagementService>();
 services.AddScoped<IDriverManagementService, DriverManagementService>();
 
@@ -135,7 +134,7 @@ services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
 services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
 services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
-services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
+services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
 services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
 services.AddScoped<IDataShaper<UserDto>, DataShaper<UserDto>>();
 services.AddScoped<IDataShaper<DriverDto>, DataShaper<DriverDto>>();
