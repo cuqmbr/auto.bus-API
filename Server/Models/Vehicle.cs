@@ -29,7 +29,7 @@ public class Vehicle
     public int GetRouteEnrollmentCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         return VehicleEnrollments.Count(ve => 
-            !ve.IsCanceled &&
+            !ve.IsCancelled() &&
             ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
             ve.RouteId == routeId);
     }
@@ -37,7 +37,7 @@ public class Vehicle
     public int GetRouteCanceledEnrollmentCount(DateTime fromDate, DateTime toDate, int routeId)
     {
         return VehicleEnrollments.Count(ve =>
-            ve.IsCanceled &&
+            ve.IsCancelled() &&
             ve.DepartureDateTimeUtc >= fromDate && ve.DepartureDateTimeUtc <= toDate &&
             ve.RouteId == routeId);
     }

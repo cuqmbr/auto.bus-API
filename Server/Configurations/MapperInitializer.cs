@@ -10,6 +10,7 @@ public class MapperInitializer : Profile
     public MapperInitializer()
     {
         RecognizePostfixes("Utc");
+        RecognizeDestinationPostfixes("Utc");
         
         CreateMap<Country, CountryDto>().ReverseMap();
         CreateMap<Country, CreateCountryDto>().ReverseMap();
@@ -47,21 +48,10 @@ public class MapperInitializer : Profile
         CreateMap<Route, CreateRouteWithAddressesDto>().ReverseMap();
         CreateMap<Route, RouteWithAddressesDto>().ReverseMap();
 
-        CreateMap<Ticket, TicketDto>().IncludeMembers(t => t.TicketGroup).ReverseMap();
+        CreateMap<Ticket, TicketDto>().ReverseMap();
         CreateMap<TicketGroup, TicketDto>();
-        /*
-        CreateMap<Ticket, CreateTicketDto>().ReverseMap();
-        CreateMap<Ticket, UpdateTicketDto>().ReverseMap();
-        CreateMap<Ticket, CreateInTicketGroupTicketDto>().ReverseMap();
-        CreateMap<Ticket, InTicketGroupTicketDto>();
-        CreateMap<Ticket, InVehicleEnrollmentTicketDto>();
-        */
         
         CreateMap<TicketGroup, TicketGroupDto>().ReverseMap();
-        /*
-        CreateMap<TicketGroup, CreateTicketGroupDto>().ReverseMap();
-        CreateMap<TicketGroup, UpdateTicketGroupDto>().ReverseMap();
-        */
 
         CreateMap<Review, ReviewDto>().ReverseMap();
         CreateMap<Review, CreateReviewDto>().ReverseMap();
@@ -81,8 +71,6 @@ public class MapperInitializer : Profile
         CreateMap<VehicleEnrollment, VehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, CreateVehicleEnrollmentDto>().ReverseMap();
         CreateMap<VehicleEnrollment, UpdateVehicleEnrollmentDto>().ReverseMap();
-        CreateMap<VehicleEnrollment, VehicleEnrollmentWithDetailsDto>().ReverseMap();
-        CreateMap<VehicleEnrollment, CreateVehicleEnrollmentWithDetailsDto>().ReverseMap();
         CreateMap<VehicleEnrollment, InReviewVehicleEnrollmentDto>();
 
         CreateMap<User, UserDto>().ReverseMap();

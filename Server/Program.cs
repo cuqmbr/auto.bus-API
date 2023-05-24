@@ -134,7 +134,6 @@ services.AddScoped<IDataShaper<ReviewDto>, DataShaper<ReviewDto>>();
 services.AddScoped<IDataShaper<CompanyDto>, DataShaper<CompanyDto>>();
 services.AddScoped<IDataShaper<VehicleDto>, DataShaper<VehicleDto>>();
 services.AddScoped<IDataShaper<VehicleEnrollmentDto>, DataShaper<VehicleEnrollmentDto>>();
-services.AddScoped<IDataShaper<VehicleEnrollmentWithDetailsDto>, DataShaper<VehicleEnrollmentWithDetailsDto>>();
 services.AddScoped<IDataShaper<RouteDto>, DataShaper<RouteDto>>();
 services.AddScoped<IDataShaper<RouteWithAddressesDto>, DataShaper<RouteWithAddressesDto>>();
 services.AddScoped<IDataShaper<RouteAddressDto>, DataShaper<RouteAddressDto>>();
