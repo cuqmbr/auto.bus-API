@@ -2,73 +2,20 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects.Model;
 
-public class TicketDto : CreateTicketDto
+public class TicketDto
 {
-    public int Id { get; set; }
-
-    public string UserId { get; set; } = null!;
-    
-    public InReviewVehicleEnrollmentDto VehicleEnrollment { get; set; } = null!;
+    public IList<InTicketAddress> Addresses { get; set; } = null!;
 }
 
-public class CreateTicketDto
+public class InTicketAddress
 {
-    [Required]
-    public int TicketGroupId { get; set; }
-    
-    [Required]
-    public int VehicleEnrollmentId { get; set; }
-    
-    [Required]
-    public int FirstRouteAddressId { get; set; }
-    
-    [Required]
-    public int LastRouteAddressId { get; set; }
-}
-
-public class UpdateTicketDto
-{
-    [Required]
-    public int Id { get; set; }
-    
-    [Required]
-    public int TicketGroupId { get; set; }
-    
-    [Required]
-    public int VehicleEnrollmentId { get; set; }
-}
-
-public class CreateInTicketGroupTicketDto
-{
-    [Required]
-    public int VehicleEnrollmentId { get; set; }
-    
-    [Required]
-    public int FirstRouteAddressId { get; set; }
-    
-    [Required]
-    public int LastRouteAddressId { get; set; }
-}
-
-public class InTicketGroupTicketDto : CreateInTicketGroupTicketDto
-{
-    public int Id { get; set; }
-}
-
-public class InVehicleEnrollmentTicketDto
-{
-    public int Id { get; set; }
-
-    public string UserId { get; set; } = null!;
-    
-    public DateTime PurchaseDateTimeUtc { get; set; }
-    
-    public bool IsReturned { get; set; } = false;
-    public bool IsMissed { get; set; } = false;
-    
-    public int TicketGroupId { get; set; }
-    public int VehicleEnrollmentId { get; set; }
-    
-    public int FirstRouteAddressId { get; set; }
-    public int LastRouteAddressId { get; set; }
+    public string Name { get; set; } = null!;
+    public string CityName { get; set; } = null!;
+    public string StateName { get; set; } = null!;
+    public string CountryName { get; set; } = null!;
+    public string FullName { get; set; } = null!;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public DateTime ArrivalDateTime { get; set; }
+    public DateTime DepartureDateTime { get; set; }
 }

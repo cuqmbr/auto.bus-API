@@ -2,44 +2,29 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.DataTransferObjects.Model;
 
-public class TicketGroupDto : CreateTicketGroupDto
+public class TicketGroupDto
 {
     public int Id { get; set; }
     
     [DataType(DataType.DateTime)]
     public DateTime PurchaseDateTime { get; set; }
-    
-    public bool IsReturned { get; set; }
-}
-
-public class CreateTicketGroupDto
-{
-    [Required]
-    public string UserId { get; set; } = null!;
-}
-
-public class UpdateTicketGroupDto
-{
-    [Required]
-    public int Id { get; set; }
-    
-    [Required]
-    public string UserId { get; set; } = null!;
-    
-    [DataType(DataType.DateTime)]
-    public DateTime PurchaseDateTime { get; set; }
-    
     public bool IsReturned { get; set; } = false;
-}
-
-public class TicketGroupWithTicketsDto
-{
-    public int Id { get; set; }
+    
+    public string DepartureAddressName { get; set; } = null!;
+    public string DepartureCityName { get; set; } = null!;
+    public string DepartureStateName { get; set; } = null!;
+    public string DepartureCountryName { get; set; } = null!;
+    public string DepartureFullName { get; set; } = null!;
+    public DateTime DepartureDateTime { get; set; }
+    
+    public string ArrivalAddressName { get; set; } = null!;
+    public string ArrivalCityName { get; set; } = null!;
+    public string ArrivalStateName { get; set; } = null!;
+    public string ArrivalCountryName { get; set; } = null!;
+    public string ArrivalFullName { get; set; } = null!;
+    public DateTime ArrivalDateTime { get; set; }
+    
+    public double Cost { get; set; }
+    
     public IList<TicketDto> Tickets { get; set; } = null!;
-}
-
-public class CreateTicketGroupWithTicketsDto : CreateTicketGroupDto
-{
-    [Required]
-    public IList<CreateInTicketGroupTicketDto> Tickets { get; set; } = null!;
 }

@@ -6,7 +6,6 @@ public class VehicleEnrollmentDto : CreateVehicleEnrollmentDto
 {
     public int Id { get; set; }
 
-    public IList<InVehicleEnrollmentTicketDto> Tickets { get; set; } = null!;
     public IList<InVehicleEnrollmentReviewDto> Reviews { get; set; } = null!;
     
     public bool IsCanceled { get; set; }

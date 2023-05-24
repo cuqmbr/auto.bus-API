@@ -2,14 +2,17 @@ namespace SharedModels.QueryParameters.Objects;
 
 public class TicketGroupParameters : ParametersBase
 {
-    public const string DefaultFields = "id,purchaseDateTime,isReturned,userId";
+    public const string DefaultFields =
+        "id,userId,purchaseDateTime,isReturned,departureAddressName,departureCityName,departureStateName,departureCountryName," +
+        "departureFullName,departureDateTime,arrivalAddressName,arrivalCityName,arrivalStateName,arrivalCountryName,arrivalFullName," +
+        "arrivalDateTime,cost,tickets";
     
     public TicketGroupParameters()
     {
         Fields = DefaultFields;
     }
-    public DateTime? FromPurchaseDateTimeUtc { get; set; }
-    public DateTime? ToPurchaseDateTimeUtc { get; set; }
+    public DateTime? FromPurchaseDateTime { get; set; }
+    public DateTime? ToPurchaseDateTime { get; set; }
     public bool? IsReturned { get; set; }
     public string? UserId { get; set; }
 }
