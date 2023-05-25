@@ -3,7 +3,7 @@ namespace SharedModels.QueryParameters.Objects;
 public class TicketGroupParameters : ParametersBase
 {
     public const string DefaultFields =
-        "id,userId,purchaseDateTime,isReturned,departureAddressName,departureCityName,departureStateName,departureCountryName," +
+        "id,userId,purchaseDateTime,isReturned,isPurchased,departureAddressName,departureCityName,departureStateName,departureCountryName," +
         "departureFullName,departureDateTime,arrivalAddressName,arrivalCityName,arrivalStateName,arrivalCountryName,arrivalFullName," +
         "arrivalDateTime,cost,tickets";
     

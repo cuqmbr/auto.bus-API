@@ -9,6 +9,7 @@ public class TicketGroupDto
     [DataType(DataType.DateTime)]
     public DateTime PurchaseDateTime { get; set; }
     public bool IsReturned { get; set; } = false;
+    public bool IsPurchased { get; set; }
     
     public string DepartureAddressName { get; set; } = null!;
     public string DepartureCityName { get; set; } = null!;
