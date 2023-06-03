@@ -22,6 +22,11 @@ public class EmailSenderService : IEmailSenderService
         _smtpClient = new SmtpClient();
         _smtpClient.SslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
     }
+
+    ~EmailSenderService()
+    {
+        _smtpClient.Dispose();
+    }
     
     public async Task<(bool succeeded, string message)> SendMail(string toEmail, string subject, string message)
     {
@@ -38,7 +43,6 @@ public class EmailSenderService : IEmailSenderService
         await _smtpClient.AuthenticateAsync(Encoding.ASCII, _smtpCredentials.User, _smtpCredentials.Password);
         await _smtpClient.SendAsync(mailMessage);
         await _smtpClient.DisconnectAsync(true);
-        _smtpClient.Dispose();
         
         return (true, "Letter has been sent successfully");
     }

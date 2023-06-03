@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -22,114 +23,104 @@ public class AuthenticationService : IAuthenticationService
     private readonly Jwt _jwt;
     
     private readonly UserManager<User> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly IHttpContextAccessor _contextAccessor;
-    private readonly LinkGenerator _linkGenerator;
     private readonly IEmailSenderService _emailSender;
     private readonly IConfiguration _configuration;
     
-    public AuthenticationService(UserManager<User> userManager,
-        RoleManager<IdentityRole> roleManager, IOptions<Jwt> jwt,
-        IHttpContextAccessor contextAccessor, LinkGenerator linkGenerator,
+    public AuthenticationService(UserManager<User> userManager, IOptions<Jwt> jwt,
         IEmailSenderService emailSender, IConfiguration configuration)
     {
         _jwt = jwt.Value;
         
         _userManager = userManager;
-        _roleManager = roleManager;
-        _contextAccessor = contextAccessor;
-        _linkGenerator = linkGenerator;
         _emailSender = emailSender;
         _configuration = configuration;
 
         _userManager.UserValidators.Clear();
     }
 
-    public async Task<(bool succeeded, string message)> RegisterAsync(RegistrationRequest regRequest)
+    public async Task<(bool succeeded, IActionResult actionResult)> Register(RegistrationRequest request)
     {
-        var userWithSameEmail = await _userManager.FindByEmailAsync(regRequest.Email);
+        var userWithSameEmail = await _userManager.FindByEmailAsync(request.Email);
         if (userWithSameEmail != null)
         {
-            return (false, "Email is already registered.");
+            return (false, new BadRequestObjectResult("Email is already registered."));
         }
 
         var userWithSamePhone = await _userManager.Users
-            .SingleOrDefaultAsync(u => u.PhoneNumber == regRequest.PhoneNumber);
+            .SingleOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
         if (userWithSamePhone != null)
         {
-            return (false, "Phone is already registered.");
+            return (false, new BadRequestObjectResult("Phone is already registered."));
         }
 
         var user = new User
         {
             UserName = "temp",
-            FirstName = regRequest.FirstName,
-            LastName = regRequest.LastName,
-            Patronymic = regRequest.Patronymic,
-            Email = regRequest.Email,
-            PhoneNumber = regRequest.PhoneNumber
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Patronymic = request.Patronymic,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber
         };
 
-        var createUserResult = await _userManager.CreateAsync(user, regRequest.Password);
+        var createUserResult = await _userManager.CreateAsync(user, request.Password);
         if (!createUserResult.Succeeded)
         {
-            return (false, $"{createUserResult.Errors?.First().Description}");
+            return (false, new BadRequestObjectResult(createUserResult.Errors));
         }
 
         await _userManager.AddToRoleAsync(user, Identity.DefaultRole.ToString());
 
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var confirmationLink = _linkGenerator.GetUriByAction(_contextAccessor.HttpContext,
-            "confirmEmail", "authentication",
-        new { email = user.Email, token = token, redirectionUrl = regRequest.EmailConfirmationRedirectUrl },
-            _contextAccessor.HttpContext.Request.Scheme);
+        var emailConfirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var confirmationMessage =
+            "Someone registered an account on our service with your email.\n" +
+            $"Here is your confirmation code: {emailConfirmationToken}\n\n" +
+            "If this was not you, please ignore this message.";
+        
+        try { await _emailSender.SendMail(user.Email, "Email confirmation", confirmationMessage); }
+        catch (Exception e) { /* ignored */ }
+        
+        // TODO: Add phone number confirmation
 
-        try
-        {
-            await _emailSender.SendMail(user.Email, "Email confirmation", confirmationLink);
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-
-        return (true, $"User registered with email {user.Email}. Before signing in confirm your email" +
-                      $"by following a link sent to registered email address.");
+        return (true, null!);
     }
 
-    public async Task<(bool succeeded, string? message)> ConfirmEmailAsync(string email, string token)
+    public async Task<(bool succeeded, IActionResult actionResult)> ConfirmRegistrationEmail(ConfirmRegistrationEmailRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null)
-        {
-            return (false, $"Email {email} not registered");
-        }
+        var dbUser = await _userManager.FindByEmailAsync(request.Email);
 
-        var result = await _userManager.ConfirmEmailAsync(user, token);
+        var result = await _userManager.ConfirmEmailAsync(dbUser, request.Token);
         if (!result.Succeeded)
         {
-            return (false, $"Error confirming email {email} with token {token}");
+            return (false, new BadRequestObjectResult($"Error confirming email."));
         }
 
-        return (true, $"Email {email} confirmed");
+        return (true, null!);
+    }
+
+    public async Task<(bool succeeded, IActionResult actionResult)> ConfirmRegistrationPhoneNumber(ConfirmRegistrationPhoneNumberRequest numberRequest)
+    {
+        var dbUser = await _userManager.Users.FirstAsync(u => u.PhoneNumber == numberRequest.PhoneNumber);
+
+        // TODO: Add phone number confirmation token validation
+
+        return (true, null!);
     }
 
     public async Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
-        AuthenticateAsync(AuthenticationRequest authRequest)
+        AuthenticateAsync(AuthenticationRequest request)
     {
         var authResponse = new AuthenticationResponse();
 
-        User user;
-
-        user = await _userManager.FindByEmailAsync(authRequest.Email);
+        var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null)
         {
-            authResponse.Message = $"No accounts registered with {authRequest.Email}.";
+            authResponse.Message = $"No accounts registered with {request.Email}.";
             return (false, authResponse, null);
         }
 
-        if (!await _userManager.CheckPasswordAsync(user, authRequest.Password))
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
         {
             authResponse.Message = $"Incorrect email or password.";
             return (false, authResponse, null);
@@ -160,13 +151,13 @@ public class AuthenticationService : IAuthenticationService
     }
 
     public async Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
-        AuthenticateWithGoogleAsync(GoogleAuthenticationRequest authRequest)
+        AuthenticateWithGoogleAsync(GoogleAuthenticationRequest request)
     {
         GoogleJsonWebSignature.ValidationSettings settings = new GoogleJsonWebSignature.ValidationSettings();
 
         settings.Audience = new List<string> { _configuration["Authentication:Google:ClientId"] };
             
-        GoogleJsonWebSignature.Payload payload  = GoogleJsonWebSignature.ValidateAsync(authRequest.IdToken, settings).Result;
+        GoogleJsonWebSignature.Payload payload  = GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings).Result;
 
         var authResponse = new AuthenticationResponse();
 
@@ -209,8 +200,8 @@ public class AuthenticationService : IAuthenticationService
         return (true, authResponse, refreshTokenString);
     }
 
-    public async Task<(bool succeeded, AuthenticationResponse authResponse,
-            string? refreshToken)> RenewRefreshTokenAsync(string? token)
+    public async Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
+        RenewRefreshTokenAsync(string? token)
     {
         var authResponse = new AuthenticationResponse();
 

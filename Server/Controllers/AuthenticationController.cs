@@ -22,30 +22,42 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest registerRequest)
+    public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest request)
     {
-        var (succeeded, message) = await _authService.RegisterAsync(registerRequest);
+        var result = await _authService.Register(request);
 
-        if (!succeeded)
+        if (!result.succeeded)
         {
-            return BadRequest(new ResponseBase {Message = message});
+            return result.actionResult;
         }
         
-        return Ok(new ResponseBase{ Message = message });
+        return Ok();
     }
 
-    [HttpGet("confirmEmail")]
-    public async Task<IActionResult> ConfirmEmailAsync([FromQuery] string email, [FromQuery] string token,
-        [FromQuery] string redirectionUrl)
+    [HttpPost("confirmEmail")]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmRegistrationEmailRequest request)
     {
-        var (succeeded, message) = await _authService.ConfirmEmailAsync(email, token);
+        var result = await _authService.ConfirmRegistrationEmail(request);
         
-        if (!succeeded)
+        if (!result.succeeded)
         {
-            return BadRequest(new ResponseBase {Message = message});
+            return result.actionResult;
         }
+
+        return Ok();
+    }
+    
+    [HttpPost("confirmPhoneNumber")]
+    public async Task<IActionResult> ConfirmPhoneNumber([FromBody] ConfirmRegistrationPhoneNumberRequest request)
+    {
+        var result = await _authService.ConfirmRegistrationPhoneNumber(request);
         
-        return Redirect(redirectionUrl);
+        if (!result.succeeded)
+        {
+            return result.actionResult;
+        }
+
+        return Ok();
     }
 
     [HttpPost("authenticate")]

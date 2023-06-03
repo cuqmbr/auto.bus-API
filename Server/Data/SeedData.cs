@@ -30,8 +30,7 @@ public class SeedData
             var adminUser = new User
             {
                 FirstName = "user", LastName = "user", Patronymic = "user",
-                Email = "admin@autobus.com",
-                EmailConfirmed = true,
+                Email = "admin@autobus.com", EmailConfirmed = true
             };
             
             await userManager.CreateAsync(adminUser, Identity.DefaultPassword);
@@ -41,7 +40,7 @@ public class SeedData
             
             companyUser = new User
             {
-                FirstName = "user", LastName = "user", Patronymic = "user",
+                FirstName = "Firstname", LastName = "Lastname", Patronymic = "Patronymic",
                 Email = "company@autobus.com",
                 EmailConfirmed = true
             };
@@ -54,8 +53,11 @@ public class SeedData
             driverUser = new User
             {
                 FirstName = "user", LastName = "user", Patronymic = "user",
-                Email = "driver@autobus.com",
-                EmailConfirmed = true
+                Email = "driver@autobus.com", EmailConfirmed = true,
+                PhoneNumber = "+380951935723", PhoneNumberConfirmed = true,
+                BirthDate = DateTime.Now.ToUniversalTime(),
+                Document = Identity.Document.Passport, DocumentDetails = "Some details",
+                Gender = Identity.Gender.Male
             };
             
             await userManager.CreateAsync(driverUser, Identity.DefaultPassword);
@@ -66,8 +68,7 @@ public class SeedData
             var defaultUser = new User
             {
                 FirstName = "user", LastName = "user", Patronymic = "user",
-                Email = "user@autobus.com",
-                EmailConfirmed = true
+                Email = "user@autobus.com", EmailConfirmed = true
             };
             
             await userManager.CreateAsync(defaultUser, Identity.DefaultPassword);

@@ -10,6 +10,5 @@ public interface ISessionUserService
     public Task<bool> IsAuthUserCompanyVehicleEnrollment(int enrollmentId);
     public Task<bool> IsAuthUserCompanyDriver(string driverId);
 
-
     public Task<bool> IsAuthUserReview(int reviewId);
 }

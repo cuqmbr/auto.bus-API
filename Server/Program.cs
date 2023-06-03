@@ -107,6 +107,7 @@ services.AddAutoMapper(typeof(MapperInitializer));
 
 services.AddScoped<IEmailSenderService, EmailSenderService>();
 services.AddScoped<IAuthenticationService, AuthenticationService>();
+services.AddScoped<IAccountManagementService, AccountManagementService>();
 
 services.AddScoped<ISessionUserService, SessionUserService>();
 

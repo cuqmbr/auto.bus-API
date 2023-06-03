@@ -9,6 +9,7 @@ using Server.Models;
 using SharedModels.DataTransferObjects.Model;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using SharedModels.Requests;
 
 namespace Server.Services;
 
@@ -21,9 +22,9 @@ public class UserManagementService : IUserManagementService
     private readonly IDataShaper<UserDto> _userDataShaper;
     private readonly IPager<ExpandoObject> _pager;
 
-    public UserManagementService(IMapper mapper, UserManager<User> userManager, RoleManager<IdentityRole> roleManager,
-        ISortHelper<ExpandoObject> userSortHelper, IDataShaper<UserDto> userDataShaper, IPager<ExpandoObject> pager,
-        ApplicationDbContext dbContext)
+    public UserManagementService(IMapper mapper, UserManager<User> userManager,
+        RoleManager<IdentityRole> roleManager, ISortHelper<ExpandoObject> userSortHelper,
+        IDataShaper<UserDto> userDataShaper, IPager<ExpandoObject> pager)
     {
         _mapper = mapper;
         _userManager = userManager;
@@ -35,7 +36,8 @@ public class UserManagementService : IUserManagementService
         _userManager.UserValidators.Clear();
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, UserDto user)> AddUser(CreateUserDto createUserDto)
+    public async Task<(bool isSucceeded, IActionResult actionResult, UserDto user)>
+        AddUser(CreateUserDto createUserDto)
     {
         var user = _mapper.Map<User>(createUserDto);
         user.BirthDate = user.BirthDate == null ? null : new DateTime(user.BirthDate.Value.Ticks, DateTimeKind.Utc);
@@ -45,12 +47,12 @@ public class UserManagementService : IUserManagementService
 
         if (await _userManager.FindByEmailAsync(user.Email) != null)
         {
-            return (false, new BadRequestObjectResult("Email already registered"), null);
+            return (false, new BadRequestObjectResult("Email already registered"), null!);
         }
         
         if (user.PhoneNumber != null && await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == user.PhoneNumber) != null)
         {
-            return (false, new BadRequestObjectResult("Phone number already registered"), null);
+            return (false, new BadRequestObjectResult("Phone number already registered"), null!);
         }
 
         if (createUserDto.Roles != null!)
@@ -59,7 +61,7 @@ public class UserManagementService : IUserManagementService
             {
                 if (!await _roleManager.RoleExistsAsync(role))
                 {
-                    return (false, new BadRequestObjectResult($"Roles \"{role}\" doesn't exist"), null);
+                    return (false, new BadRequestObjectResult($"Roles \"{role}\" doesn't exist"), null!);
                 }
 
                 userDto.Roles.Add(role);
@@ -71,11 +73,11 @@ public class UserManagementService : IUserManagementService
 
         userDto.Id = user.Id;
     
-        return (true, null, userDto);
+        return (true, null!, userDto);
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, IEnumerable<ExpandoObject> users,
-        PagingMetadata<ExpandoObject> pagingMetadata)> GetUsers(UserParameters parameters)
+    public async Task<(bool isSucceeded, IActionResult actionResult, IEnumerable<ExpandoObject> users, PagingMetadata<ExpandoObject> pagingMetadata)>
+        GetUsers(UserParameters parameters)
     {
         var dbUsers = _userManager.Users.Include(u => u.Company)
             .Include(u => u.Reviews).Include(u => u.TicketGroups)
@@ -108,7 +110,7 @@ public class UserManagementService : IUserManagementService
             }
         }
         
-        return (true, null, shapedData, pagingMetadata);
+        return (true, null!, shapedData, pagingMetadata);
         
         void SearchByAllUserFields(ref IQueryable<User> users, string? search)
         {
@@ -126,7 +128,7 @@ public class UserManagementService : IUserManagementService
         }
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, ExpandoObject user)>
+    public async Task<(bool isSucceeded, IActionResult actionResult, ExpandoObject user)>
         GetUser(string id, string? fields)
     {
         var dbUser = await _userManager.Users.Include(u => u.Employer).
@@ -142,24 +144,24 @@ public class UserManagementService : IUserManagementService
             fields = UserParameters.DefaultFields;
         }
         
-        var userDto = _mapper.Map<DriverDto>(dbUser);
+        var userDto = _mapper.Map<UserDto>(dbUser);
         var shapedData = _userDataShaper.ShapeData(userDto, fields);
 
-        return (true, null, shapedData);
+        return (true, null!, shapedData);
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, UserDto user)>
+    public async Task<(bool isSucceeded, IActionResult actionResult, UserDto user)>
         UpdateUser(string id, UpdateUserDto updateUserDto)
     {
         if (id != updateUserDto.Id)
         {
-            return (false, new BadRequestObjectResult("Object and query ids don't match"), null);
+            return (false, new BadRequestObjectResult("Object and query ids don't match"), null!);
         }
 
         if (!await _userManager.Users.AnyAsync(u => u.Id == id))
         {
             
-            return (false, new NotFoundResult(), null);
+            return (false, new NotFoundResult(), null!);
         }
 
         var dbUser = await _userManager.FindByIdAsync(id);
@@ -198,7 +200,7 @@ public class UserManagementService : IUserManagementService
         {
             if (!await _roleManager.RoleExistsAsync(role))
             {
-                return (false, new BadRequestObjectResult($"Roles \"{role}\" doesn't exist"), null);
+                return (false, new BadRequestObjectResult($"Roles \"{role}\" doesn't exist"), null!);
             }
         }
 
@@ -212,10 +214,10 @@ public class UserManagementService : IUserManagementService
 
         await _userManager.UpdateAsync(dbUser);
     
-        return (true, null, userDto);
+        return (true, null!, userDto);
     }
 
-    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteUser(string id)
+    public async Task<(bool isSucceed, IActionResult actionResult)> DeleteUser(string id)
     {
         var dbUser = await _userManager.FindByIdAsync(id);
     
@@ -226,6 +228,6 @@ public class UserManagementService : IUserManagementService
 
         await _userManager.DeleteAsync(dbUser);
     
-        return (true, null);
+        return (true, null!);
     }
 }

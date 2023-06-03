@@ -35,6 +35,7 @@ public class MapperInitializer : Profile
         CreateMap<Address, InCityAddressDto>().ReverseMap();
         CreateMap<Address, CreateAddressInRouteAddress>().ReverseMap();
         CreateMap<Address, AddressInRouteAddress>().ReverseMap();
+        CreateMap<Address, InTicketAddress>().ReverseMap();
 
         CreateMap<RouteAddress, RouteAddressDto>()
             .ForMember(d => d.AddressName, opt => opt.MapFrom(src => src.Address.Name))
@@ -107,9 +108,6 @@ public class MapperInitializer : Profile
         CreateMap<User, StrippedUserDto>().ReverseMap();
         
         CreateMap<User, DriverDto>().ForMember(d => d.CompanyId, o => o.MapFrom(s => s.Employer.CompanyId));
-        CreateMap<UserDto, DriverDto>().ReverseMap();
-        CreateMap<CreateUserDto, CreateDriverDto>().ReverseMap();
-        CreateMap<CreateDriverDto, UpdateDriverDto>().ReverseMap();
         
         CreateMap<RouteAddressDetails, RouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
         CreateMap<RouteAddressDetails, CreateRouteAddressDetailsInVehicleEnrollmentDto>().ReverseMap();
