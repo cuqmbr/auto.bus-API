@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using SharedModels.Requests;
 using SharedModels.Requests.Authentication;
 using SharedModels.Responses;
 
@@ -9,18 +8,22 @@ public interface IAuthenticationService
 {
     Task<(bool succeeded, IActionResult actionResult)> Register(RegistrationRequest request);
     
+    Task<(bool succeeded, IActionResult actionResult)> SendEmailConfirmationCode(SendConfirmationRegistrationEmailRequest request);
+    
     Task<(bool succeeded, IActionResult actionResult)> ConfirmRegistrationEmail(ConfirmRegistrationEmailRequest request);
+    
+    Task<(bool succeeded, IActionResult actionResult)> SendPhoneNumberConfirmationCode(SendConfirmationRegistrationPhoneNumberRequest request);
     
     Task<(bool succeeded, IActionResult actionResult)> ConfirmRegistrationPhoneNumber(ConfirmRegistrationPhoneNumberRequest numberRequest);
 
     Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
-        AuthenticateAsync(AuthenticationRequest request);
+        Authenticate(AuthenticationRequest request);
     
     Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
-        AuthenticateWithGoogleAsync(GoogleAuthenticationRequest request);
+        AuthenticateWithGoogle(GoogleAuthenticationRequest request);
 
     Task<(bool succeeded, AuthenticationResponse authResponse, string? refreshToken)>
-        RenewRefreshTokenAsync(string? token);
+        RenewRefreshToken(string? token);
 
     Task<bool> RevokeRefreshToken(string? token);
 }

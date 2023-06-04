@@ -2,12 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.Requests.Authentication;
 
-public class ConfirmRegistrationPhoneNumberRequest
+public class ConfirmRegistrationPhoneNumberRequest : SendConfirmationRegistrationPhoneNumberRequest
 {
-    [Required]
-    [DataType(DataType.PhoneNumber)]
-    public string PhoneNumber { get; set; } = null!;
-    
     [Required]
     public string Token { get; set; } = null!;
 }

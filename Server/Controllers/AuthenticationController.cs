@@ -23,7 +23,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegistrationRequest request)
+    public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
     {
         var result = await _authService.Register(request);
 
@@ -34,11 +34,37 @@ public class AuthenticationController : ControllerBase
         
         return Ok();
     }
+    
+    [HttpPost("sendEmailConfirmationCode")]
+    public async Task<IActionResult> SendEmailConfirmationCode([FromBody] SendConfirmationRegistrationEmailRequest request)
+    {
+        var result = await _authService.SendEmailConfirmationCode(request);
+        
+        if (!result.succeeded)
+        {
+            return result.actionResult;
+        }
+
+        return Ok();
+    }
 
     [HttpPost("confirmEmail")]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmRegistrationEmailRequest request)
     {
         var result = await _authService.ConfirmRegistrationEmail(request);
+        
+        if (!result.succeeded)
+        {
+            return result.actionResult;
+        }
+
+        return Ok();
+    }
+    
+    [HttpPost("sendPhoneNumberConfirmationCode")]
+    public async Task<IActionResult> SendPhoneNumberConfirmationCode([FromBody] SendConfirmationRegistrationPhoneNumberRequest request)
+    {
+        var result = await _authService.SendPhoneNumberConfirmationCode(request);
         
         if (!result.succeeded)
         {
@@ -65,7 +91,7 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> Authenticate(AuthenticationRequest authRequest)
     {
         var (succeeded, authResponse, refreshToken) =
-            await _authService.AuthenticateAsync(authRequest);
+            await _authService.Authenticate(authRequest);
 
         if (!succeeded)
         {
@@ -81,7 +107,7 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> AuthenticateWithGoogle(GoogleAuthenticationRequest authRequest)
     {
         var (succeeded, authResponse, refreshToken) =
-            await _authService.AuthenticateWithGoogleAsync(authRequest);
+            await _authService.AuthenticateWithGoogle(authRequest);
 
         if (!succeeded)
         {
@@ -99,7 +125,7 @@ public class AuthenticationController : ControllerBase
         var refreshToken = Request.Cookies["refreshToken"];
 
         var (succeeded, authResponse, newRefreshToken) =
-            await _authService.RenewRefreshTokenAsync(refreshToken);
+            await _authService.RenewRefreshToken(refreshToken);
 
         if (!succeeded)
         {

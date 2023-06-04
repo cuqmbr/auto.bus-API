@@ -2,12 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SharedModels.Requests.Authentication;
 
-public class ConfirmRegistrationEmailRequest
+public class ConfirmRegistrationEmailRequest : SendConfirmationRegistrationEmailRequest
 {
-    [Required]
-    [DataType(DataType.EmailAddress)]
-    public string Email { get; set; } = null!;
-
     [Required]
     public string Token { get; set; } = null!;
 }
