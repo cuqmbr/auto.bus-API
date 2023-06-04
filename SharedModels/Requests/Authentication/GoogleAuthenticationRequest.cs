@@ -1,4 +1,4 @@
-namespace SharedModels.Requests;
+namespace SharedModels.Requests.Authentication;
 
 public class GoogleAuthenticationRequest
 {

@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Services;
 using SharedModels.Requests;
+using SharedModels.Requests.Account;
 
 namespace Server.Controllers;
  
+[Authorize]
 [Route("api/account")]
 [ApiController]
 public class AccountController : ControllerBase
@@ -41,7 +44,7 @@ public class AccountController : ControllerBase
         return Ok();
     }
     
-    [HttpPost("confirmationEmailCallback")]
+    [HttpPost("confirmChangeEmail")]
     public async Task<IActionResult> ConfirmChangeEmail([FromBody] ConfirmChangeEmailRequest request)
     {
         var result = await _accountManagementService.ConfirmChangeEmail(request);
@@ -67,7 +70,7 @@ public class AccountController : ControllerBase
         return Ok();
     }
 
-    [HttpPost("confirmPhoneNumber")]
+    [HttpPost("confirmChangePhoneNumber")]
     public async Task<IActionResult> ConfirmPhoneNumber([FromBody] ConfirmChangePhoneNumberRequest request)
     {
         var result = await _accountManagementService.ConfirmPhoneNumberChange(request);

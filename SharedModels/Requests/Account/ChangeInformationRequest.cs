@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Utils;
 
-namespace SharedModels.Requests;
+namespace SharedModels.Requests.Account;
 
 public class ChangeInformationRequest
 {

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Server.Models;
 using SharedModels.Requests;
+using SharedModels.Requests.Account;
 
 namespace Server.Services;
 

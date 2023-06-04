@@ -9,44 +9,45 @@ using Server.Models;
 using SharedModels.DataTransferObjects.Model;
 using SharedModels.QueryParameters;
 using SharedModels.QueryParameters.Objects;
+using SharedModels.Requests;
+using SharedModels.Requests.Account;
 using Utils;
 
 namespace Server.Services;
 
 public class DriverManagementService : IDriverManagementService
 {
-    private readonly IUserManagementService _userManagementService;
     private readonly UserManager<User> _userManager;
-    private readonly ApplicationDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly ISortHelper<ExpandoObject> _userSortHelper;
     private readonly IDataShaper<DriverDto> _userDataShaper;
     private readonly IPager<ExpandoObject> _pager;
     private readonly ISessionUserService _sessionUserService;
+    private readonly IEmailSenderService _emailSender;
 
-    public DriverManagementService(IUserManagementService userManagementService, IMapper mapper,
-        UserManager<User> userManager, ApplicationDbContext dbContext,
+    public DriverManagementService( IMapper mapper, UserManager<User> userManager,
         ISortHelper<ExpandoObject> userSortHelper, IDataShaper<DriverDto> userDataShaper,
-        IPager<ExpandoObject> pager, ISessionUserService sessionUserService)
+        IPager<ExpandoObject> pager, ISessionUserService sessionUserService,
+        IEmailSenderService emailSenderService)
     {
-        _userManagementService = userManagementService;
         _userManager = userManager;
-        _dbContext = dbContext;
         _userSortHelper = userSortHelper;
         _userDataShaper = userDataShaper;
         _pager = pager;
         _sessionUserService = sessionUserService;
+        _emailSender = emailSenderService;
         _mapper = mapper;
+        
+        _userManager.UserValidators.Clear();
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, DriverDto driver)> AddDriver(CreateDriverDto createDriverDto)
+    public async Task<(bool isSucceeded, IActionResult actionResult)> RegisterDriver(DriverRegistrationRequest request)
     {
-        
         if (_sessionUserService.GetAuthUserRole() == Identity.Roles.Administrator.ToString())
         {
-            if (createDriverDto.CompanyId == null)
+            if (request.CompanyId == null)
             {
-                return (false, new BadRequestObjectResult("CompanyId must have a value"), null!);
+                return (false, new BadRequestObjectResult("CompanyId must have a value"));
             }
         }
         else
@@ -54,35 +55,63 @@ public class DriverManagementService : IDriverManagementService
             var isAuthUserCompanyOwnerResult = await _sessionUserService.IsAuthUserCompanyOwner();
             if (!isAuthUserCompanyOwnerResult.isCompanyOwner)
             {
-                return (false, new UnauthorizedResult(), null!);
+                return (false, new UnauthorizedResult());
             }
-            createDriverDto.CompanyId = isAuthUserCompanyOwnerResult.companyId;
+            request.CompanyId = isAuthUserCompanyOwnerResult.companyId;
         }
-        
-        var createUserDto = _mapper.Map<CreateUserDto>(createDriverDto);
-        
-        createUserDto.Roles = new List<string> { "Driver" };
-        createUserDto.Password = createDriverDto.Password;
-        
-        var result = await _userManagementService.AddUser(createUserDto);
-        
-        if (!result.isSucceeded)
+
+        var userWithSameEmail = await _userManager.FindByEmailAsync(request.Email);
+        if (userWithSameEmail != null)
         {
-            return (false, result.actionResult, null);
+            return (false, new BadRequestObjectResult("Email is already registered."));
         }
 
-        var driverDto = _mapper.Map<DriverDto>(result.user);
-        _dbContext.CompanyDrivers.Add(new CompanyDriver { CompanyId = (int) createDriverDto.CompanyId, DriverId = driverDto.Id });
-        await _dbContext.SaveChangesAsync();
+        var userWithSamePhone = await _userManager.Users
+            .SingleOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+        if (userWithSamePhone != null)
+        {
+            return (false, new BadRequestObjectResult("Phone is already registered."));
+        }
 
-        driverDto.Roles = result.user.Roles;
+        var user = new User
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Patronymic = request.Patronymic,
+            BirthDate = new DateTime(request.BirthDate.Year, request.BirthDate.Month, request.BirthDate.Day, 0, 0, 0, DateTimeKind.Utc),
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber
+        };
 
-        return (true, null, driverDto);
+        var createUserResult = await _userManager.CreateAsync(user, request.Password);
+        if (!createUserResult.Succeeded)
+        {
+            return (false, new BadRequestObjectResult(createUserResult.Errors));
+        }
+
+        await _userManager.AddToRoleAsync(user, Identity.Roles.Driver.ToString());
+
+        user.Employer = new CompanyDriver { CompanyId = (int)request.CompanyId };
+
+        user.Gender = request.Gender;
+        user.Document = request.Document;
+        user.DocumentDetails = request.DocumentDetails;
+
+        await _userManager.UpdateAsync(user);
+
+        var emailMessage = "You have been registered as a driver.\n\n" +
+                           $"Your login: ${request.Email}\nYour password: ${request.Password}";
+        
+        try { await _emailSender.SendMail(request.Email, "Driver Registration", emailMessage); }
+        catch (Exception) {  /* ignored */ }
+        
+        return (true, null!);
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, IEnumerable<ExpandoObject> drivers, PagingMetadata<ExpandoObject> pagingMetadata)> GetDrivers(CompanyDriverParameters parameters)
+    public async Task<(bool isSucceeded, IActionResult actionResult, IEnumerable<ExpandoObject> drivers, PagingMetadata<ExpandoObject> pagingMetadata)>
+        GetDrivers(CompanyDriverParameters parameters)
     {
-        var dbUsers = _userManager.Users.Include(u => u.Employer)
+        var dbDriverUsers = _userManager.Users.Include(u => u.Employer)
             .Where(u => u.Employer != null).AsQueryable();
         
         if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
@@ -93,18 +122,18 @@ public class DriverManagementService : IDriverManagementService
                 return (false, new UnauthorizedResult(), null!, null!);
             }
             
-            dbUsers = dbUsers.Where(u => u.Employer.CompanyId == result.companyId);
+            dbDriverUsers = dbDriverUsers.Where(u => u.Employer!.CompanyId == result.companyId);
         }
 
-        if (!dbUsers.Any())
+        if (!dbDriverUsers.Any())
         {
             return (false, new NotFoundResult(), null!, null!);
         }
 
-        FilterByCompanyId(ref dbUsers, parameters.CompanyId);
-        SearchByAllUserFields(ref dbUsers, parameters.Search);
+        FilterByCompanyId(ref dbDriverUsers, parameters.CompanyId);
+        SearchByAllUserFields(ref dbDriverUsers, parameters.Search);
 
-        var userDtos = _mapper.ProjectTo<DriverDto>(dbUsers);
+        var userDtos = _mapper.ProjectTo<DriverDto>(dbDriverUsers);
         var shapedData = _userDataShaper.ShapeData(userDtos, parameters.Fields).AsQueryable();
         
         try
@@ -118,16 +147,16 @@ public class DriverManagementService : IDriverManagementService
         
         var pagingMetadata = _pager.ApplyPaging(ref shapedData, parameters.PageNumber, parameters.PageSize);
 
-        return (true, null, shapedData, pagingMetadata);
+        return (true, null!, shapedData, pagingMetadata);
 
-        void FilterByCompanyId(ref IQueryable<User> users, int? compnayId)
+        void FilterByCompanyId(ref IQueryable<User> users, int? companyId)
         {
-            if (!users.Any() || compnayId == null)
+            if (!users.Any() || companyId == null)
             {
                 return;
             }
 
-            users = users.Where(u => u.Employer.CompanyId == compnayId);
+            users = users.Where(u => u.Employer!.CompanyId == companyId);
         }
         
         void SearchByAllUserFields(ref IQueryable<User> users, string? search)
@@ -137,29 +166,31 @@ public class DriverManagementService : IDriverManagementService
                 return;
             }
 
-            users = users.Where(u => 
-                u.FirstName.ToLower().Contains(search.ToLower()) ||
-                u.LastName.ToLower().Contains(search.ToLower()) ||
-                u.Patronymic.ToLower().Contains(search.ToLower()) ||
+            var t = users.ToArray().Where(u =>
+                (u.LastName.ToLower() + u.FirstName.ToLower() + u.Patronymic.ToLower()).Contains(search.ToLower()) ||
                 u.Email.ToLower().Contains(search.ToLower()) ||
                 u.PhoneNumber.ToLower().Contains(search.ToLower()));
+
+            users = t
+                .AsQueryable();
         }
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, ExpandoObject driver)> GetDriver(string id, string? fields)
+    public async Task<(bool isSucceeded, IActionResult actionResult, ExpandoObject driver)>
+        GetDriver(string driverId, string? fields)
     {
         if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
         {
-            if (!await _sessionUserService.IsAuthUserCompanyDriver(id))
+            if (!await _sessionUserService.IsAuthUserCompanyDriver(driverId))
             {
                 return (false, new UnauthorizedResult(), null!);
             }
         }
         
-        var dbUser = await _userManager.Users.Include(u => u.Employer).
-            FirstOrDefaultAsync(u => u.Id == id);
+        var dbDriverUser = await _userManager.Users.Include(u => u.Employer).
+            FirstOrDefaultAsync(u => u.Id == driverId && u.Employer != null);
         
-        if (dbUser == null)
+        if (dbDriverUser == null)
         {
             return (false, new NotFoundResult(), null!);
         }
@@ -169,39 +200,24 @@ public class DriverManagementService : IDriverManagementService
             fields = CompanyDriverParameters.DefaultFields;
         }
         
-        var userDto = _mapper.Map<DriverDto>(dbUser);
+        var userDto = _mapper.Map<DriverDto>(dbDriverUser);
         var shapedData = _userDataShaper.ShapeData(userDto, fields);
 
-        return (true, null, shapedData);
+        return (true, null!, shapedData);
     }
 
-    public async Task<(bool isSucceeded, IActionResult? actionResult, DriverDto driver)> UpdateDriver(string id, UpdateDriverDto updateDriverDto)
+    public async Task<(bool isSucceed, IActionResult actionResult)> DeleteDriver(string driverId)
     {
         if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
         {
-            if (!(await _sessionUserService.IsAuthUserCompanyOwner()).isCompanyOwner &&
-                !await _sessionUserService.IsAuthUserCompanyDriver(id))
-            {
-                return (false, new UnauthorizedResult(), null!);
-            }
-        }
-        
-        var updateUserDto = _mapper.Map<UpdateUserDto>(updateDriverDto);
-        var result = await _userManagementService.UpdateUser(id, updateUserDto);
-
-        return (result.isSucceeded, result.actionResult, _mapper.Map<DriverDto>(result.user));
-    }
-
-    public async Task<(bool isSucceed, IActionResult? actionResult)> DeleteDriver(string id)
-    {
-        if (_sessionUserService.GetAuthUserRole() != Identity.Roles.Administrator.ToString())
-        {
-            if (!await _sessionUserService.IsAuthUserCompanyDriver(id))
+            if (!await _sessionUserService.IsAuthUserCompanyDriver(driverId))
             {
                 return (false, new UnauthorizedResult());
             }
         }
-        
-        return await _userManagementService.DeleteUser(id);
+
+        await _userManager.DeleteAsync(await _userManager.FindByIdAsync(driverId));
+            
+        return (true, null!);
     }
 }

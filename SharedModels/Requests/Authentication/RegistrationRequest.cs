@@ -1,27 +1,27 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SharedModels.Requests;
+namespace SharedModels.Requests.Authentication;
 
 public class RegistrationRequest
 {
-    [Required(ErrorMessage = "Firstname is required")]
+    [Required]
     public string FirstName { get; set; } = null!;
     
-    [Required(ErrorMessage = "Lastname is required")]
+    [Required]
     public string LastName { get; set; } = null!;
     
-    [Required(ErrorMessage = "Patronymic is required")]
+    [Required]
     public string Patronymic { get; set; } = null!;
     
-    [Required(ErrorMessage = "Email is required")]
+    [Required]
     [EmailAddress]
     public string Email { get; set; } = null!;
 
-    [Required(ErrorMessage = "Phone number is required")]
+    [Required]
     [Phone]
     public string PhoneNumber { get; set; } = null!;
     
-    [Required(ErrorMessage = "Password is required")]
+    [Required]
     [DataType(DataType.Password)]
     public string Password { get; set; } = null!;
 }

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SharedModels.Requests;
+namespace SharedModels.Requests.Account;
 
 public class ChangePasswordRequest
 {

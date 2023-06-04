@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SharedModels.Requests;
+using SharedModels.Requests.Authentication;
 using SharedModels.Responses;
 
 namespace Server.Services;

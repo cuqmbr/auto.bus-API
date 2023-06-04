@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Server.Configurations;
 using Server.Services;
 using SharedModels.Requests;
+using SharedModels.Requests.Authentication;
 using SharedModels.Responses;
 
 namespace Server.Controllers;

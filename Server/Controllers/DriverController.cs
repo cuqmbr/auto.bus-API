@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Server.Services;
 using SharedModels.DataTransferObjects.Model;
 using SharedModels.QueryParameters.Objects;
+using SharedModels.Requests;
 
 namespace Server.Controllers;
 
@@ -20,17 +21,17 @@ public class DriverController : ControllerBase
     }
     
     [Authorize(Policy = "CompanyAccess")]
-    [HttpPost]
-    public async Task<IActionResult> AddDriver(CreateDriverDto Driver)
+    [HttpPost("register")]
+    public async Task<IActionResult> AddDriver(DriverRegistrationRequest driverRegistrationRequest)
     {
-        var result = await _driverManagementService.AddDriver(Driver);
+        var result = await _driverManagementService.RegisterDriver(driverRegistrationRequest);
     
         if (!result.isSucceeded)
         {
             return result.actionResult;
         }
-    
-        return CreatedAtAction(nameof(GetDriver), new {id = result.driver.Id}, result.driver);
+
+        return Ok();
     }
 
     [Authorize(Policy = "CompanyAccess")]
@@ -63,20 +64,6 @@ public class DriverController : ControllerBase
         return Ok(result.driver);
     }
 
-    [Authorize(Policy = "CompanyAccess")]
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateDriver(string id, UpdateDriverDto driver)
-    {
-        var result = await _driverManagementService.UpdateDriver(id, driver);
-    
-        if (!result.isSucceeded)
-        {
-            return result.actionResult;
-        }
-    
-        return Ok(result.driver);
-    }
-    
     [Authorize(Policy = "CompanyAccess")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDriver(string id)

@@ -12,7 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Server.Configurations;
 using Server.Constants;
 using Server.Models;
-using SharedModels.Requests;
+using SharedModels.Requests.Authentication;
 using SharedModels.Responses;
 using Utils;
 
@@ -55,7 +55,6 @@ public class AuthenticationService : IAuthenticationService
 
         var user = new User
         {
-            UserName = "temp",
             FirstName = request.FirstName,
             LastName = request.LastName,
             Patronymic = request.Patronymic,
